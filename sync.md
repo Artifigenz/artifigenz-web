@@ -17,19 +17,19 @@ Founded by **Cooper** ([@CooperAIWorks](https://x.com/CooperAIWorks)) and **Raja
 - **Purpose:** Establishing verifiable trust, identity, and reputation for autonomous agents operating across the internet
 - **Status:** Active
 
-### Guerilla
+### RunLife
+- **What:** Personal life OS
+- **Purpose:** An AI-native operating system for managing personal life — tasks, routines, goals, and daily operations, all agent-assisted
+- **Status:** Active
+
+### Goriila
 - **What:** AI marketing engine for X
 - **Purpose:** Autonomous marketing and growth operations powered by AI agents on the X (Twitter) platform
 - **Status:** Active
 
-### TARS.
+### TARS
 - **What:** Shipping pulse dashboard
 - **Purpose:** Real-time visibility into shipping velocity and product delivery cadence — a mission control for what's being built and deployed
-- **Status:** Active
-
-### RunLife
-- **What:** Personal life OS
-- **Purpose:** An AI-native operating system for managing personal life — tasks, routines, goals, and daily operations, all agent-assisted
 - **Status:** Active
 
 ---
