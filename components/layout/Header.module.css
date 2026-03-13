@@ -1,0 +1,41 @@
+.header {
+  padding: 24px 40px;
+  display: flex;
+  align-items: center;
+}
+
+.logoMark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.logoIcon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.logoText {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 600px) {
+  .header {
+    padding: 16px 20px;
+  }
+
+  .logoIcon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .logoText {
+    font-size: 0.9rem;
+  }
+}

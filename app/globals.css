@@ -1,0 +1,39 @@
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #f5f0eb;
+  --text: #1a1a1a;
+  --text-mid: #3d3830;
+  --text-dim: #8a8078;
+  --accent: #e85d26;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========== KEYFRAMES ========== */
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== SELECTION ========== */
+::selection {
+  background: rgba(232, 93, 38, 0.15);
+  color: var(--text);
+}
