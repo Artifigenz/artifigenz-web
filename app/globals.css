@@ -6,24 +6,28 @@
 
 :root {
   --bg: #ffffff;
-  --text: #1a1a1a;
-  --text-mid: #3d3830;
-  --text-dim: #6b6b6b;
-  --accent: #e85d26;
-  --border: rgba(0, 0, 0, 0.08);
+  --text: #000000;
+  --text-mid: #444444;
+  --text-dim: #999999;
+  --border: #000000;
+  --border-light: #ececec;
+  --card-bg: transparent;
+  --card-hover: transparent;
 }
 
 :root.dark {
-  --bg: #0a0a0a;
-  --text: #f5f5f5;
-  --text-mid: #c0c0c0;
-  --text-dim: #888888;
-  --border: rgba(255, 255, 255, 0.1);
+  --bg: #000000;
+  --text: #ffffff;
+  --text-mid: #bbbbbb;
+  --text-dim: #666666;
+  --border: #ffffff;
+  --border-light: #222222;
+  --card-bg: transparent;
+  --card-hover: transparent;
 }
 
 html, body {
   height: 100%;
-  overflow: hidden;
 }
 
 body {
@@ -31,9 +35,9 @@ body {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
-/* ========== KEYFRAMES ========== */
 @keyframes fadeUp {
   to {
     opacity: 1;
@@ -41,8 +45,7 @@ body {
   }
 }
 
-/* ========== SELECTION ========== */
 ::selection {
-  background: rgba(232, 93, 38, 0.15);
-  color: var(--text);
+  background: var(--text);
+  color: var(--bg);
 }
