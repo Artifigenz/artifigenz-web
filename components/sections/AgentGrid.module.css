@@ -27,8 +27,8 @@
   cursor: pointer;
 }
 
-.activeCard:first-child {
-  border-top: 1px solid var(--border-light);
+.activeCard:last-child {
+  border-bottom: none;
 }
 
 .activeCard.visible {
@@ -130,6 +130,6 @@
   }
 
   .activeArrow {
-    opacity: 1;
+    display: none;
   }
 }
