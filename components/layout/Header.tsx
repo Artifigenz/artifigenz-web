@@ -17,7 +17,13 @@ export default function Header() {
         />
         <span className={styles.logoText}>Artifigenz</span>
       </Link>
-      <ThemeToggle />
+      <div className={styles.actions}>
+        <Link href="/explore" className={styles.navLink}>Explore</Link>
+        <ThemeToggle />
+        <button className={styles.avatar} aria-label="Profile">
+          <span className={styles.avatarInitial}>S</span>
+        </button>
+      </div>
     </header>
   );
 }

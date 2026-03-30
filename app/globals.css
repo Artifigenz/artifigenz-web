@@ -12,7 +12,7 @@
   --border: #000000;
   --border-light: #ececec;
   --card-bg: transparent;
-  --card-hover: transparent;
+  --card-hover: #f6f6f6;
 }
 
 :root.dark {
@@ -23,7 +23,7 @@
   --border: #ffffff;
   --border-light: #222222;
   --card-bg: transparent;
-  --card-hover: transparent;
+  --card-hover: #111111;
 }
 
 html, body {

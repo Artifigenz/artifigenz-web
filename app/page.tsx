@@ -1,7 +1,7 @@
 import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
 import Hero from '@/components/sections/Hero';
 import AgentGrid from '@/components/sections/AgentGrid';
+import ChatInput from '@/components/sections/ChatInput';
 import styles from './page.module.css';
 
 export default function Home() {
@@ -11,8 +11,8 @@ export default function Home() {
       <main className={styles.main}>
         <Hero />
         <AgentGrid />
+        <ChatInput />
       </main>
-      <Footer />
     </div>
   );
 }

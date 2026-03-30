@@ -23,11 +23,8 @@ export default function Hero() {
   return (
     <section className={styles.hero}>
       <h1 className={styles.title}>
-        {greeting}, Suba
+        {greeting}, Suba — your agents found a few things while you were away.
       </h1>
-      <p className={styles.sub}>
-        3 agents worked overnight. 2 need your approval.
-      </p>
     </section>
   );
 }

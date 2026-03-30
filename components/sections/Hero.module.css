@@ -6,31 +6,23 @@
 }
 
 .hero {
-  padding: 80px 0 56px;
+  padding: 80px 0 48px;
   opacity: 0;
   transform: translateY(20px);
   animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
 }
 
 .title {
-  font-size: clamp(2rem, 4.5vw, 3.8rem);
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
   font-weight: 400;
-  letter-spacing: -0.04em;
-  line-height: 1.08;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
   color: var(--text);
-  margin-bottom: 20px;
-}
-
-.sub {
-  font-size: clamp(0.85rem, 1.2vw, 1rem);
-  font-weight: 400;
-  color: var(--text-dim);
-  line-height: 1.6;
-  max-width: 480px;
+  max-width: 100%;
 }
 
 @media (max-width: 600px) {
   .hero {
-    padding: 48px 0 40px;
+    padding: 48px 0 36px;
   }
 }

@@ -3,7 +3,7 @@ export interface Agent {
   pitch: string;
   skills: string[];
   active: boolean;
-  insight?: string;
+  insights?: string[];
   lastActive?: string;
 }
 
@@ -14,7 +14,11 @@ export const AGENTS: Agent[] = [
     pitch: 'Finds money you didn\'t know you were losing.',
     skills: ['Budget tracking', 'Subscription audit', 'Savings goals', 'Expense categorization', 'Bill reminders'],
     active: true,
-    insight: 'Found 3 dormant subscriptions totaling $127/mo. Awaiting your approval to cancel.',
+    insights: [
+      'You spent 22% more on dining out this month compared to last.',
+      '3 subscriptions haven\'t been used in 60+ days.',
+      'Your savings rate improved to 18% this quarter.',
+    ],
     lastActive: '2 min ago',
   },
   {
@@ -22,7 +26,11 @@ export const AGENTS: Agent[] = [
     pitch: 'Plans trips you\'d never have time to research.',
     skills: ['Flight deals', 'Itinerary builder', 'Hotel comparison', 'Visa requirements', 'Local recommendations'],
     active: true,
-    insight: 'Flights to Tokyo dropped 34% for April 12–19. Saved 3 options for you.',
+    insights: [
+      'Flights to Tokyo dropped 34% for April 12–19.',
+      'Your usual hotel in Bali just opened March availability.',
+      'Passport expires in 4 months — some countries require 6.',
+    ],
     lastActive: '18 min ago',
   },
   {
@@ -30,7 +38,11 @@ export const AGENTS: Agent[] = [
     pitch: 'Notices patterns in your habits before you do.',
     skills: ['Sleep analysis', 'Fitness tracking', 'Habit streaks', 'Nutrition logging', 'Mood tracking'],
     active: true,
-    insight: 'Sleep dropped below 6h three nights this week. Suggesting schedule adjustments.',
+    insights: [
+      'Sleep dropped below 6h three nights this week.',
+      'Your step count is up 12% since last month.',
+      'You\'ve hit your water intake goal 5 days in a row.',
+    ],
     lastActive: '1 hr ago',
   },
   {
@@ -38,7 +50,11 @@ export const AGENTS: Agent[] = [
     pitch: 'Goes deep so you get the short version.',
     skills: ['Topic deep-dives', 'Competitor analysis', 'Summarization', 'Source verification', 'Trend spotting'],
     active: true,
-    insight: 'Competitive analysis on 5 players in your space is ready. 12-page summary.',
+    insights: [
+      'Competitive analysis on 5 players in your space is ready.',
+      'Found 3 new papers on the topic you flagged last week.',
+      'Market trend report for Q1 2026 has been summarized.',
+    ],
     lastActive: '3 hr ago',
   },
 
