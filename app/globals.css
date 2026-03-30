@@ -49,3 +49,7 @@ body {
   background: var(--text);
   color: var(--bg);
 }
+
+:root.dark img[alt="Artifigenz"] {
+  filter: invert(1);
+}
