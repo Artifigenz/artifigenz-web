@@ -29,7 +29,7 @@ export default function ThemeProvider({
   children: React.ReactNode;
 }) {
   const [theme, setTheme] = useState<Mode>('system');
-  const [visualTheme, setVisualTheme] = useState<VisualTheme>('terminal');
+  const [visualTheme, setVisualTheme] = useState<VisualTheme>('aura');
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState(false);
 
