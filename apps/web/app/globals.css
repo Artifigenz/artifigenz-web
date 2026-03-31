@@ -1,0 +1,193 @@
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ══════════════════════════════════
+   Terminal Theme (default)
+   ══════════════════════════════════ */
+
+:root {
+  --bg: #ffffff;
+  --text: #000000;
+  --text-mid: #444444;
+  --text-dim: #999999;
+  --border: #000000;
+  --border-light: #ececec;
+  --card-bg: transparent;
+  --card-hover: #f6f6f6;
+  --radius: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-full: 9999px;
+  --shadow: none;
+  --shadow-lg: none;
+  --menu-bg: var(--bg);
+  --menu-border: var(--border-light);
+  --menu-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  --input-bg: transparent;
+  --accent: #000000;
+  --accent-text: #ffffff;
+  --font: inherit;
+}
+
+:root.dark {
+  --bg: #000000;
+  --text: #ffffff;
+  --text-mid: #bbbbbb;
+  --text-dim: #666666;
+  --border: #ffffff;
+  --border-light: #222222;
+  --card-bg: transparent;
+  --card-hover: #111111;
+  --menu-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  --accent: #ffffff;
+  --accent-text: #000000;
+}
+
+/* ══════════════════════════════════
+   Aura Theme
+   ══════════════════════════════════ */
+
+[data-theme="aura"] {
+  --bg: #ffffff;
+  --text: #111111;
+  --text-mid: #555555;
+  --text-dim: #999999;
+  --border: #d0d0d0;
+  --border-light: rgba(0, 0, 0, 0.06);
+  --card-bg: rgba(255, 255, 255, 0.55);
+  --card-hover: rgba(255, 255, 255, 0.75);
+  --radius: 16px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+  --shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --menu-bg: #ffffff;
+  --menu-border: rgba(0, 0, 0, 0.08);
+  --menu-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  --input-bg: rgba(255, 255, 255, 0.6);
+  --accent: #111111;
+  --accent-text: #ffffff;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+[data-theme="aura"].dark {
+  --bg: #0a0a0a;
+  --text: #f0f0f0;
+  --text-mid: #aaaaaa;
+  --text-dim: #666666;
+  --border: #333333;
+  --border-light: rgba(255, 255, 255, 0.06);
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-hover: rgba(255, 255, 255, 0.06);
+  --menu-bg: #141414;
+  --menu-border: rgba(255, 255, 255, 0.08);
+  --menu-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --input-bg: rgba(255, 255, 255, 0.04);
+  --accent: #f0f0f0;
+  --accent-text: #0a0a0a;
+}
+
+/* ── Aura background ── */
+
+[data-theme="aura"] body {
+  font-family: var(--font);
+  background:
+    radial-gradient(ellipse at 15% 20%, rgba(180, 140, 255, 0.1), transparent 50%),
+    radial-gradient(ellipse at 85% 30%, rgba(100, 200, 255, 0.08), transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(255, 160, 120, 0.07), transparent 50%),
+    var(--bg);
+}
+
+[data-theme="aura"].dark body {
+  background:
+    radial-gradient(ellipse at 15% 20%, rgba(140, 100, 255, 0.06), transparent 50%),
+    radial-gradient(ellipse at 85% 30%, rgba(60, 140, 255, 0.04), transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(255, 120, 80, 0.03), transparent 50%),
+    var(--bg);
+}
+
+/* Mouse gradient glow */
+[data-theme="aura"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(
+      600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(180, 140, 255, 0.15),
+      transparent 55%
+    ),
+    radial-gradient(
+      800px circle at calc(var(--mouse-x, 50%) + 200px) calc(var(--mouse-y, 50%) - 150px),
+      rgba(100, 200, 255, 0.1),
+      transparent 55%
+    ),
+    radial-gradient(
+      500px circle at calc(var(--mouse-x, 50%) - 250px) calc(var(--mouse-y, 50%) + 100px),
+      rgba(255, 160, 120, 0.1),
+      transparent 55%
+    );
+  pointer-events: none;
+}
+
+[data-theme="aura"].dark body::before {
+  background:
+    radial-gradient(
+      600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(140, 100, 255, 0.08),
+      transparent 55%
+    ),
+    radial-gradient(
+      800px circle at calc(var(--mouse-x, 50%) + 200px) calc(var(--mouse-y, 50%) - 150px),
+      rgba(60, 140, 255, 0.06),
+      transparent 55%
+    ),
+    radial-gradient(
+      500px circle at calc(var(--mouse-x, 50%) - 250px) calc(var(--mouse-y, 50%) + 100px),
+      rgba(255, 120, 80, 0.05),
+      transparent 55%
+    );
+}
+
+/* ══════════════════════════════════
+   Base Styles
+   ══════════════════════════════════ */
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+:root.dark img[alt="Artifigenz"] {
+  filter: invert(1);
+}
+
+[data-theme="aura"].dark img[alt="Artifigenz"] {
+  filter: invert(1);
+}
