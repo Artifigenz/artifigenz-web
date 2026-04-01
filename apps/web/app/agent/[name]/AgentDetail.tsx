@@ -363,7 +363,6 @@ export default function AgentDetail({ params }: { params: Promise<{ name: string
         </div>
 
         {/* Insights */}
-        <div className={styles.insightsHeader}>Insights — {data.unread} unread</div>
         {data.timeline.map((group) => (
           <div key={group.date} className={styles.timelineGroup}>
             <span className={`${styles.timelineDate} ${group.insights.some(i => !i.read) ? '' : styles.timelineDateRead}`}>

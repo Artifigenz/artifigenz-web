@@ -160,7 +160,6 @@ export default function AgentDetailScreen() {
           </View>
 
           {/* Insights timeline */}
-          <Text style={s.insightsHeader}>Insights — {data.unread} unread</Text>
           {data.timeline.map((group: any) => (
             <View key={group.date} style={s.timelineGroup}>
               <Text style={[s.timelineDate, group.insights.every((i: any) => i.read) && s.timelineDateRead]}>{group.date}</Text>
