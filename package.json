@@ -2,23 +2,20 @@
   "name": "artifigenz",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@10.9.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "dev:web": "turbo dev --filter=@artifigenz/web",
+    "dev:mobile": "cd apps/mobile && EXPO_NO_METRO_WORKSPACE_ROOT=1 npx expo start",
+    "build:web": "turbo build --filter=@artifigenz/web"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.6",
-    "typescript": "^5"
+    "turbo": "^2"
   }
 }
