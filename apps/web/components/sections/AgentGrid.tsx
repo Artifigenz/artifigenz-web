@@ -11,6 +11,7 @@ const ICON_MAP: Record<string, ReactNode> = {
   Travel: <Icons.TravelIcon />,
   Health: <Icons.HealthIcon />,
   Research: <Icons.ResearchIcon />,
+  'Job Search': <Icons.JobSearchIcon />,
 };
 
 function CyclingInsight({ insights, tick }: { insights: string[]; tick: number }) {
@@ -56,9 +57,9 @@ function CyclingInsight({ insights, tick }: { insights: string[]; tick: number }
 }
 
 export default function AgentGrid() {
-  const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set());
-  const [ticks, setTicks] = useState<number[]>([0, 0, 0, 0]);
   const active = AGENTS.filter((a) => a.active);
+  const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set());
+  const [ticks, setTicks] = useState<number[]>(active.map(() => 0));
 
   useEffect(() => {
     const timeouts: NodeJS.Timeout[] = [];
@@ -90,7 +91,7 @@ export default function AgentGrid() {
       <div className={styles.activeList}>
         {active.map((agent, index) => (
           <Link
-            href={`/agent/${agent.name.toLowerCase()}`}
+            href={`/agent/${agent.name.toLowerCase().replace(/\s+/g, '-')}`}
             key={agent.name}
             className={`${styles.activeCard} ${visibleItems.has(index) ? styles.visible : ''}`}
             style={{ textDecoration: 'none', color: 'inherit' }}

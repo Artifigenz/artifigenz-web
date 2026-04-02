@@ -13,6 +13,7 @@ const ICON_MAP: Record<string, React.ComponentType> = {
   Travel: Icons.TravelIcon,
   Health: Icons.HealthIcon,
   Research: Icons.ResearchIcon,
+  'Job Search': Icons.JobSearchIcon,
 };
 
 interface Insight {
@@ -201,6 +202,47 @@ const AGENT_DATA: Record<string, AgentPageData> = {
       ]},
     ],
   },
+  'job-search': {
+    since: 'March 20',
+    lastAnalyzed: '30 minutes ago',
+    greeting: "Three roles dropped today that fit your profile well. Also, your Stripe application just moved to the interview stage — nice.",
+    accounts: [{ name: 'LinkedIn' }, { name: 'Indeed' }],
+    goals: [
+      { id: '1', text: 'Find a senior product role in AI/ML' },
+      { id: '2', text: 'Target $180k+ base salary' },
+      { id: '3', text: 'Prefer remote or hybrid in SF Bay Area' },
+    ],
+    skills: [
+      { name: 'Job Matching', active: true },
+      { name: 'Application Tracking', active: true },
+      { name: 'Interview Prep', active: true },
+      { name: 'Salary Benchmarking', active: true },
+      { name: 'Network Alerts', active: false },
+    ],
+    statsTitle: 'Job Search',
+    stats: [
+      { value: '12', label: 'Roles matched' },
+      { value: '4', label: 'Applications sent' },
+      { value: '1', label: 'Interview stage' },
+      { value: '$185k', label: 'Avg salary match' },
+    ],
+    unread: 3,
+    timeline: [
+      { date: 'Today', insights: [
+        { category: 'New Roles', title: '3 new roles matching your profile', detail: 'Senior PM at Anthropic, Staff PM at OpenAI, Head of Product at Cohere. All remote-friendly.', mustSee: true },
+        { category: 'Application', title: 'Stripe application moved to interview', detail: 'Your application for Senior PM was reviewed. Interview invite expected within 48 hours.', mustSee: true },
+      ]},
+      { date: 'Mon, Mar 31', insights: [
+        { category: 'Salary', title: 'Salary benchmark updated for your target roles', detail: 'Senior PM in AI: $175k–$210k base. Your target of $180k sits at the 40th percentile.' },
+      ]},
+      { date: 'Fri, Mar 28', insights: [
+        { category: 'Network', title: 'A former colleague just joined Anthropic', detail: 'Sarah Chen started as Director of Product last week. Could be a warm intro.', read: true },
+      ]},
+      { date: 'Wed, Mar 26', insights: [
+        { category: 'Market', title: 'AI product roles up 23% this quarter', detail: 'Hiring in AI product management is accelerating. 340 new roles posted in the last 30 days.', read: true },
+      ]},
+    ],
+  },
 };
 
 export default function AgentDetail({ params }: { params: Promise<{ name: string }> }) {
@@ -210,10 +252,10 @@ export default function AgentDetail({ params }: { params: Promise<{ name: string
   const [goals, setGoals] = useState<Goal[] | null>(null);
   const [newGoal, setNewGoal] = useState('');
 
-  const agentName = name.charAt(0).toUpperCase() + name.slice(1);
-  const agent = AGENTS.find((a) => a.name.toLowerCase() === name.toLowerCase());
-  const data = AGENT_DATA[name.toLowerCase()];
-  const IconComponent = ICON_MAP[agentName];
+  const slug = name.toLowerCase();
+  const agent = AGENTS.find((a) => a.name.toLowerCase().replace(/\s+/g, '-') === slug);
+  const data = AGENT_DATA[slug];
+  const IconComponent = agent ? ICON_MAP[agent.name] : undefined;
   const currentGoals = goals ?? data?.goals ?? [];
 
   if (!agent || !data) {
@@ -386,7 +428,7 @@ export default function AgentDetail({ params }: { params: Promise<{ name: string
           </div>
         ))}
       </main>
-      <ChatInput agent={agentName} />
+      <ChatInput agent={agent.name} />
     </div>
   );
 }

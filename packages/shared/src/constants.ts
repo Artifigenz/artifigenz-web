@@ -51,6 +51,19 @@ export const AGENTS: Agent[] = [
     lastActive: '3 hr ago',
   },
 
+  {
+    name: 'Job Search',
+    pitch: 'Finds opportunities that match your skills and ambitions.',
+    skills: ['Job matching', 'Application tracking', 'Interview prep', 'Salary benchmarking', 'Network alerts'],
+    active: true,
+    insights: [
+      '3 new roles matching your profile posted today.',
+      'A company you follow just opened a senior position.',
+      'Your application to Stripe moved to interview stage.',
+    ],
+    lastActive: '30 min ago',
+  },
+
   // ── Explore ──
   {
     name: 'Learning',

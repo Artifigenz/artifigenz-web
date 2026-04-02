@@ -1,6 +1,6 @@
 import AgentDetail from './AgentDetail';
 
-const AGENT_NAMES = ['finance', 'travel', 'health', 'research'];
+const AGENT_NAMES = ['finance', 'travel', 'health', 'research', 'job-search'];
 
 export function generateStaticParams() {
   return AGENT_NAMES.map((name) => ({ name }));
