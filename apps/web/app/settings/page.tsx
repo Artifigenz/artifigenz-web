@@ -1,7 +1,11 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Header from '@/components/layout/Header';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useTheme } from '@/components/ThemeProvider';
+import { useApiClient } from '@/hooks/useApiClient';
+import type { ApiError } from '@/lib/api-client';
 import styles from './page.module.css';
 
 const THEMES = [
@@ -9,8 +13,45 @@ const THEMES = [
   { id: 'aura' as const, name: 'Aura', description: 'Gradients. Glass. Warm and luminous.' },
 ];
 
+interface ProfileData {
+  id: string;
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
+  timezone: string;
+  locale: string;
+  currency: string;
+  onboardingCompleted: boolean;
+}
+
 export default function SettingsPage() {
+  return (
+    <ProtectedRoute>
+      <SettingsContent />
+    </ProtectedRoute>
+  );
+}
+
+function SettingsContent() {
   const { theme, setTheme, visualTheme, setVisualTheme } = useTheme();
+  const api = useApiClient();
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .getMe()
+      .then((data) => {
+        if (!cancelled) setProfile(data);
+      })
+      .catch((err: ApiError) => {
+        if (!cancelled) setError(err.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api]);
 
   return (
     <div className={styles.page}>
@@ -20,14 +61,36 @@ export default function SettingsPage() {
 
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Profile</h2>
-          <div className={styles.field}>
-            <label className={styles.label}>Name</label>
-            <input className={styles.input} defaultValue="Cooper" readOnly />
-          </div>
-          <div className={styles.field}>
-            <label className={styles.label}>Email</label>
-            <input className={styles.input} defaultValue="suba@artifigenz.com" readOnly />
-          </div>
+          {error ? (
+            <p className={styles.fieldHint} style={{ color: 'crimson' }}>
+              Failed to load profile: {error}
+            </p>
+          ) : !profile ? (
+            <p className={styles.fieldHint}>Loading…</p>
+          ) : (
+            <>
+              <div className={styles.field}>
+                <label className={styles.label}>Name</label>
+                <input
+                  className={styles.input}
+                  defaultValue={profile.name ?? ''}
+                  readOnly
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Email</label>
+                <input className={styles.input} defaultValue={profile.email} readOnly />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Timezone</label>
+                <input className={styles.input} defaultValue={profile.timezone} readOnly />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Currency</label>
+                <input className={styles.input} defaultValue={profile.currency} readOnly />
+              </div>
+            </>
+          )}
         </section>
 
         <section className={styles.section}>

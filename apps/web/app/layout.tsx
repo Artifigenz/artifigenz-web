@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { JetBrains_Mono } from 'next/font/google';
+import { ClerkProvider } from '@clerk/nextjs';
 import ThemeProvider from '@/components/ThemeProvider';
 import AuraGradient from '@/components/effects/AuraGradient';
 import './globals.css';
@@ -27,13 +28,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={jetbrainsMono.className}>
-        <ThemeProvider>
-          <AuraGradient />
-          {children}
-        </ThemeProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body className={jetbrainsMono.className}>
+          <ThemeProvider>
+            <AuraGradient />
+            {children}
+          </ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
