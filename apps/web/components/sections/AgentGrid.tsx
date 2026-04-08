@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useRef, type ReactNode } from 'react';
+import React, { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { AGENTS } from '@artifigenz/shared';
 import { useActivatedAgents, agentSlug } from '@/hooks/useActivatedAgents';
+import ExploreGrid from './ExploreGrid';
 import * as Icons from './AgentIcons';
 import styles from './AgentGrid.module.css';
 
@@ -107,17 +108,16 @@ export default function AgentGrid() {
   }
 
   if (active.length === 0) {
+    const available = AGENTS.filter((a) => !slugs.includes(agentSlug(a.name)));
     return (
       <section className={styles.section}>
-        <div className={styles.emptyState}>
-          <h3 className={styles.emptyTitle}>No active agents yet</h3>
+        <div className={styles.emptyHeader}>
+          <h2 className={styles.emptyTitle}>Pick your first agent</h2>
           <p className={styles.emptyText}>
-            Pick an agent from the explore page and I&apos;ll start working for you.
+            These specialists are ready to work for you. Tap <strong>Add agent</strong> and they&apos;ll get started immediately.
           </p>
-          <Link href="/explore" className={styles.emptyCta}>
-            Browse agents →
-          </Link>
         </div>
+        <ExploreGrid agents={available} ctaLabel="Add agent" />
       </section>
     );
   }

@@ -120,8 +120,22 @@
 
 .capabilityItem {
   display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.capabilityIcon {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+.capabilityText {
+  display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .capabilityLabel {

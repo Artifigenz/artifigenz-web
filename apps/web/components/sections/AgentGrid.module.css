@@ -161,55 +161,34 @@
 
 /* ── Empty state ── */
 
-.emptyState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 12px;
-  padding: 56px 32px;
-  border: 1px dashed var(--border-light);
-  border-radius: var(--radius-md);
-  background: var(--card-hover);
+.emptyHeader {
+  margin-bottom: 28px;
   opacity: 0;
+  transform: translateY(12px);
   animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
 }
 
 .emptyTitle {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text);
-  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 8px;
 }
 
 .emptyText {
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   font-weight: 400;
   color: var(--text-mid);
   line-height: 1.5;
-  max-width: 340px;
   margin: 0;
+  max-width: 560px;
 }
 
-.emptyCta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.82rem;
+.emptyText strong {
+  color: var(--text);
   font-weight: 600;
-  color: var(--accent-text);
-  background: var(--accent);
-  border: none;
-  border-radius: var(--radius-full, 9999px);
-  padding: 12px 28px;
-  text-decoration: none;
-  cursor: pointer;
-  margin-top: 6px;
-  transition: opacity 0.15s ease;
-}
-
-.emptyCta:hover {
-  opacity: 0.85;
 }
 
 @media (max-width: 640px) {

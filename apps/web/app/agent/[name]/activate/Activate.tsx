@@ -7,6 +7,7 @@ import Header from '@/components/layout/Header';
 import { AGENTS } from '@artifigenz/shared';
 import { useActivatedAgents } from '@/hooks/useActivatedAgents';
 import * as Icons from '@/components/sections/AgentIcons';
+import * as CapIcons from '@/components/sections/CapabilityIcons';
 import styles from './page.module.css';
 
 const ICON_MAP: Record<string, React.ComponentType> = {
@@ -17,9 +18,33 @@ const ICON_MAP: Record<string, React.ComponentType> = {
   'Job Search': Icons.JobSearchIcon,
 };
 
+const CAPABILITY_ICON_MAP: Record<string, React.ComponentType> = {
+  repeat: CapIcons.RepeatIcon,
+  arrowUpCircle: CapIcons.ArrowUpCircleIcon,
+  alertTriangle: CapIcons.AlertTriangleIcon,
+  barChart: CapIcons.BarChartIcon,
+  tag: CapIcons.TagIcon,
+  bell: CapIcons.BellIcon,
+  map: CapIcons.MapIcon,
+  passport: CapIcons.PassportIcon,
+  moon: CapIcons.MoonIcon,
+  activity: CapIcons.ActivityIcon,
+  droplet: CapIcons.DropletIcon,
+  link: CapIcons.LinkIcon,
+  scan: CapIcons.ScanIcon,
+  eye: CapIcons.EyeIcon,
+  fileText: CapIcons.FileTextIcon,
+  trendingUp: CapIcons.TrendingUpIcon,
+  target: CapIcons.TargetIcon,
+  checkSquare: CapIcons.CheckSquareIcon,
+  dollarSign: CapIcons.DollarSignIcon,
+  users: CapIcons.UsersIcon,
+};
+
 interface Capability {
   label: string;
   description: string;
+  icon: string;
 }
 
 interface SampleInsight {
@@ -55,10 +80,10 @@ const ACTIVATION_DATA: Record<string, ActivationData> = {
     tagline: "I watch your money so you don't have to.",
     pitch: "I'll quietly track every charge, flag the ones that change, and tell you when something's off — before it costs you. No spreadsheets, no thinking required.",
     capabilities: [
-      { label: 'Spot forgotten subscriptions', description: 'Every recurring charge across all accounts, in one place.' },
-      { label: 'Catch bill increases', description: 'Notice the moment a subscription quietly raises its price.' },
-      { label: 'Flag unusual spending', description: 'When a category creeps above your average, I tell you why.' },
-      { label: 'Forecast your month', description: "Always-on cash flow projection based on what's already booked." },
+      { label: 'Spot forgotten subscriptions', description: 'Every recurring charge across all accounts, in one place.', icon: 'repeat' },
+      { label: 'Catch bill increases', description: 'Notice the moment a subscription quietly raises its price.', icon: 'arrowUpCircle' },
+      { label: 'Flag unusual spending', description: 'When a category creeps above your average, I tell you why.', icon: 'alertTriangle' },
+      { label: 'Forecast your month', description: "Always-on cash flow projection based on what's already booked.", icon: 'barChart' },
     ],
     sampleInsights: [
       { category: 'Bill Change', title: 'Netflix increased by 48%', detail: '$15.49/mo → $22.99/mo. This adds $90/year to your subscriptions.', mustSee: true },
@@ -91,10 +116,10 @@ const ACTIVATION_DATA: Record<string, ActivationData> = {
     tagline: "I'll find the deal before the seat's gone.",
     pitch: "I watch fares, hotel availability, and travel docs for the places you care about — and tell you the moment something worth booking shows up.",
     capabilities: [
-      { label: 'Track fares automatically', description: 'Set destinations once; I watch prices 24/7.' },
-      { label: 'Alert on deal windows', description: 'Know the moment flights drop for your dates.' },
-      { label: 'Build itineraries fast', description: 'Flights, hotels, and activities in one flow.' },
-      { label: 'Flag visa & passport issues', description: 'Never get blindsided at the airport.' },
+      { label: 'Track fares automatically', description: 'Set destinations once; I watch prices 24/7.', icon: 'tag' },
+      { label: 'Alert on deal windows', description: 'Know the moment flights drop for your dates.', icon: 'bell' },
+      { label: 'Build itineraries fast', description: 'Flights, hotels, and activities in one flow.', icon: 'map' },
+      { label: 'Flag visa & passport issues', description: 'Never get blindsided at the airport.', icon: 'passport' },
     ],
     sampleInsights: [
       { category: 'Price Drop', title: 'Tokyo flights dropped 34% for April 12–19', detail: 'Round-trip from JFK now $287. Lowest in 90 days.', mustSee: true },
@@ -124,10 +149,10 @@ const ACTIVATION_DATA: Record<string, ActivationData> = {
     tagline: 'I notice the patterns before you do.',
     pitch: "I quietly track your sleep, activity, and habits — and flag the trends worth paying attention to before they become problems.",
     capabilities: [
-      { label: 'Spot sleep trends early', description: 'Catch patterns in your rest before they become chronic.' },
-      { label: 'Track activity streaks', description: 'Gentle nudges when your movement drops off.' },
-      { label: 'Monitor hydration', description: 'Simple daily check-ins, no guilt trips.' },
-      { label: 'Connect habits to outcomes', description: 'Understand what actually moves your numbers.' },
+      { label: 'Spot sleep trends early', description: 'Catch patterns in your rest before they become chronic.', icon: 'moon' },
+      { label: 'Track activity streaks', description: 'Gentle nudges when your movement drops off.', icon: 'activity' },
+      { label: 'Monitor hydration', description: 'Simple daily check-ins, no guilt trips.', icon: 'droplet' },
+      { label: 'Connect habits to outcomes', description: 'Understand what actually moves your numbers.', icon: 'link' },
     ],
     sampleInsights: [
       { category: 'Sleep', title: 'Sleep dropped below 6h three nights this week', detail: '14-day average: 5.2 hrs. Your baseline is 7.1 hrs.', mustSee: true },
@@ -157,10 +182,10 @@ const ACTIVATION_DATA: Record<string, ActivationData> = {
     tagline: 'I go deep so you get the short version.',
     pitch: 'I monitor papers, competitors, and trends on the topics you care about — and hand you the 2-minute version when something matters.',
     capabilities: [
-      { label: 'Daily topic scans', description: 'New papers, news, and posts filtered to what you care about.' },
-      { label: 'Competitor watching', description: 'Know when your rivals ship, price-change, or pivot.' },
-      { label: 'Clean summaries', description: 'Every report distilled to what you actually need to know.' },
-      { label: 'Trend spotting', description: "Catch shifts in your space before they're obvious." },
+      { label: 'Daily topic scans', description: 'New papers, news, and posts filtered to what you care about.', icon: 'scan' },
+      { label: 'Competitor watching', description: 'Know when your rivals ship, price-change, or pivot.', icon: 'eye' },
+      { label: 'Clean summaries', description: 'Every report distilled to what you actually need to know.', icon: 'fileText' },
+      { label: 'Trend spotting', description: "Catch shifts in your space before they're obvious.", icon: 'trendingUp' },
     ],
     sampleInsights: [
       { category: 'Report', title: 'Competitive analysis ready — 12 pages', detail: '5 competitors analyzed: positioning, pricing, feature gaps.', mustSee: true },
@@ -187,10 +212,10 @@ const ACTIVATION_DATA: Record<string, ActivationData> = {
     tagline: "I'll find the roles worth your time.",
     pitch: 'I match new openings to your profile, track your applications, and keep tabs on salary benchmarks — so you stop refreshing job boards.',
     capabilities: [
-      { label: 'Match roles automatically', description: 'New postings filtered to your skills and ambitions.' },
-      { label: 'Track applications', description: 'Know where every submission stands, no spreadsheet needed.' },
-      { label: 'Benchmark salaries', description: "Real numbers for the roles you're targeting." },
-      { label: 'Spot warm intros', description: 'Notice when someone you know joins a target company.' },
+      { label: 'Match roles automatically', description: 'New postings filtered to your skills and ambitions.', icon: 'target' },
+      { label: 'Track applications', description: 'Know where every submission stands, no spreadsheet needed.', icon: 'checkSquare' },
+      { label: 'Benchmark salaries', description: "Real numbers for the roles you're targeting.", icon: 'dollarSign' },
+      { label: 'Spot warm intros', description: 'Notice when someone you know joins a target company.', icon: 'users' },
     ],
     sampleInsights: [
       { category: 'New Roles', title: '3 new roles matching your profile', detail: 'Senior PM at Anthropic, Staff PM at OpenAI, Head of Product at Cohere. All remote-friendly.', mustSee: true },
@@ -369,12 +394,22 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
             <div className={styles.capabilitiesSection}>
               <span className={styles.sectionLabel}>What I&apos;ll do for you</span>
               <div className={styles.capabilitiesGrid}>
-                {data.capabilities.map((cap) => (
-                  <div key={cap.label} className={styles.capabilityItem}>
-                    <span className={styles.capabilityLabel}>{cap.label}</span>
-                    <span className={styles.capabilityDesc}>{cap.description}</span>
-                  </div>
-                ))}
+                {data.capabilities.map((cap) => {
+                  const CapIcon = CAPABILITY_ICON_MAP[cap.icon];
+                  return (
+                    <div key={cap.label} className={styles.capabilityItem}>
+                      {CapIcon && (
+                        <span className={styles.capabilityIcon}>
+                          <CapIcon />
+                        </span>
+                      )}
+                      <div className={styles.capabilityText}>
+                        <span className={styles.capabilityLabel}>{cap.label}</span>
+                        <span className={styles.capabilityDesc}>{cap.description}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
