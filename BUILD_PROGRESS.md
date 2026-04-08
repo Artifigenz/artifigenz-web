@@ -40,14 +40,15 @@
 
 ## Phase 3.5: Chat
 
-- [ ] 3.6 Create `conversations` and `messages` tables
-- [ ] 3.7 `ChatService` — create conversation, send message, persist, get history
-- [ ] 3.8 `PromptBuilder` — 7-layer system prompt assembly from live data
-- [ ] 3.9 `ToolExecutor` — register agent tools, validate inputs, execute with user scoping
-- [ ] 3.10 `StreamHandler` — SSE streaming adapter for Hono with tool call interruptions
-- [ ] 3.11 Finance chat config — prompt section, data summary, 5 tools
-- [ ] 3.12 Chat API routes — POST /chat, GET /conversations, DELETE
+- [x] 3.6 `conversations` and `messages` tables (created in Phase 1)
+- [x] 3.7 `ChatService` — create conversation, send message, persist, get history
+- [x] 3.8 `PromptBuilder` — 5-layer system prompt (identity, user, agents, insights, finance snapshot)
+- [x] 3.9 `ToolExecutor` — register platform + agent tools, execute with user scoping
+- [x] 3.10 SSE streaming via Hono `streamSSE` with tool call interruptions
+- [x] 3.11 Finance chat tools — 5 tools (getSubscriptions, getUpcomingCharges, getTransactions, getSubscriptionHistory, getSpendingSummary)
+- [x] 3.12 Chat API routes — POST /chat (SSE), GET /conversations, GET/DELETE :id
 - [ ] 3.13 Client integration — SSE consumption in web (Next.js) + mobile (Expo)
+- [ ] 3.14 Deferred: file uploads, edit/regenerate branching, custom instructions, search
 
 ## Phase 4: Unified Context
 

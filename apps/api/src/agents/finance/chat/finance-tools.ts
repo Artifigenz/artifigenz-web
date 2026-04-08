@@ -1,0 +1,297 @@
+import { and, eq, gte, lte, desc, like, sql } from "drizzle-orm";
+import {
+  db,
+  financeTransactions,
+  financeSubscriptions,
+  agentInstances,
+} from "@artifigenz/db";
+import type { ChatToolDefinition } from "../../../platform/chat/types";
+
+async function getFinanceAgent(userId: string) {
+  const [agent] = await db
+    .select()
+    .from(agentInstances)
+    .where(
+      and(
+        eq(agentInstances.userId, userId),
+        eq(agentInstances.agentTypeId, "finance"),
+      ),
+    )
+    .limit(1);
+  return agent ?? null;
+}
+
+export const financeTools: ChatToolDefinition[] = [
+  {
+    name: "getSubscriptions",
+    description: "List all detected subscriptions for the user",
+    input_schema: {
+      type: "object",
+      properties: {
+        sortBy: {
+          type: "string",
+          enum: ["amount", "next_charge", "merchant"],
+          description: "Sort order — default 'amount'",
+        },
+      },
+    },
+    async execute(input, ctx) {
+      const agent = await getFinanceAgent(ctx.user.id);
+      if (!agent) return { subscriptions: [] };
+
+      const subs = await db
+        .select()
+        .from(financeSubscriptions)
+        .where(
+          and(
+            eq(financeSubscriptions.agentInstanceId, agent.id),
+            eq(financeSubscriptions.status, "active"),
+          ),
+        );
+
+      const sortBy = (input.sortBy as string) ?? "amount";
+      const sorted = [...subs].sort((a, b) => {
+        if (sortBy === "amount") return Number(b.amount) - Number(a.amount);
+        if (sortBy === "next_charge") {
+          return (a.nextChargeDate ?? "").localeCompare(b.nextChargeDate ?? "");
+        }
+        return (a.merchantName ?? "").localeCompare(b.merchantName ?? "");
+      });
+
+      return {
+        subscriptions: sorted.map((s) => ({
+          merchant: s.merchantName,
+          amount: Number(s.amount),
+          frequency: s.frequency,
+          lastCharge: s.lastChargeDate,
+          nextCharge: s.nextChargeDate,
+          account: s.accountName,
+        })),
+        totalCount: sorted.length,
+      };
+    },
+  },
+
+  {
+    name: "getUpcomingCharges",
+    description:
+      "Get subscriptions charging within a date range (default next 7 days)",
+    input_schema: {
+      type: "object",
+      properties: {
+        days: { type: "number", description: "Number of days ahead to look" },
+      },
+    },
+    async execute(input, ctx) {
+      const agent = await getFinanceAgent(ctx.user.id);
+      if (!agent) return { charges: [] };
+
+      const days = (input.days as number) ?? 7;
+      const today = new Date().toISOString().slice(0, 10);
+      const future = new Date();
+      future.setDate(future.getDate() + days);
+      const futureStr = future.toISOString().slice(0, 10);
+
+      const subs = await db
+        .select()
+        .from(financeSubscriptions)
+        .where(
+          and(
+            eq(financeSubscriptions.agentInstanceId, agent.id),
+            gte(financeSubscriptions.nextChargeDate, today),
+            lte(financeSubscriptions.nextChargeDate, futureStr),
+          ),
+        );
+
+      const sorted = [...subs].sort((a, b) =>
+        (a.nextChargeDate ?? "").localeCompare(b.nextChargeDate ?? ""),
+      );
+
+      return {
+        charges: sorted.map((s) => ({
+          merchant: s.merchantName,
+          amount: Number(s.amount),
+          date: s.nextChargeDate,
+          account: s.accountName,
+        })),
+        totalAmount: sorted.reduce((sum, s) => sum + Number(s.amount), 0),
+        count: sorted.length,
+      };
+    },
+  },
+
+  {
+    name: "getTransactions",
+    description: "Query transactions by date range, merchant, or category",
+    input_schema: {
+      type: "object",
+      properties: {
+        startDate: { type: "string", description: "Start date YYYY-MM-DD" },
+        endDate: { type: "string", description: "End date YYYY-MM-DD" },
+        merchantName: { type: "string", description: "Filter by merchant" },
+        category: { type: "string", description: "Filter by category" },
+        limit: { type: "number", description: "Max results (default 50)" },
+      },
+    },
+    async execute(input, ctx) {
+      const agent = await getFinanceAgent(ctx.user.id);
+      if (!agent) return { transactions: [] };
+
+      const conditions = [eq(financeTransactions.agentInstanceId, agent.id)];
+      if (input.startDate) {
+        conditions.push(
+          gte(financeTransactions.transactionDate, input.startDate as string),
+        );
+      }
+      if (input.endDate) {
+        conditions.push(
+          lte(financeTransactions.transactionDate, input.endDate as string),
+        );
+      }
+      if (input.merchantName) {
+        conditions.push(
+          like(financeTransactions.merchantName, `%${input.merchantName}%`),
+        );
+      }
+      if (input.category) {
+        conditions.push(eq(financeTransactions.category, input.category as string));
+      }
+
+      const limit = (input.limit as number) ?? 50;
+      const txs = await db
+        .select()
+        .from(financeTransactions)
+        .where(and(...conditions))
+        .orderBy(desc(financeTransactions.transactionDate))
+        .limit(limit);
+
+      return {
+        transactions: txs.map((t) => ({
+          date: t.transactionDate,
+          merchant: t.merchantName ?? t.description,
+          amount: Number(t.amount),
+          category: t.category,
+          account: t.accountName,
+        })),
+        count: txs.length,
+      };
+    },
+  },
+
+  {
+    name: "getSubscriptionHistory",
+    description: "Get charge history for a specific subscription merchant",
+    input_schema: {
+      type: "object",
+      properties: {
+        merchantName: { type: "string", description: "Merchant name" },
+        months: { type: "number", description: "How many months back (default 6)" },
+      },
+      required: ["merchantName"],
+    },
+    async execute(input, ctx) {
+      const agent = await getFinanceAgent(ctx.user.id);
+      if (!agent) return { history: [] };
+
+      const months = (input.months as number) ?? 6;
+      const since = new Date();
+      since.setMonth(since.getMonth() - months);
+      const sinceStr = since.toISOString().slice(0, 10);
+
+      const txs = await db
+        .select()
+        .from(financeTransactions)
+        .where(
+          and(
+            eq(financeTransactions.agentInstanceId, agent.id),
+            gte(financeTransactions.transactionDate, sinceStr),
+            like(
+              financeTransactions.merchantName,
+              `%${input.merchantName as string}%`,
+            ),
+          ),
+        )
+        .orderBy(desc(financeTransactions.transactionDate));
+
+      return {
+        history: txs.map((t) => ({
+          date: t.transactionDate,
+          amount: Number(t.amount),
+          account: t.accountName,
+        })),
+        totalCharged: txs.reduce((sum, t) => sum + Number(t.amount), 0),
+        count: txs.length,
+      };
+    },
+  },
+
+  {
+    name: "getSpendingSummary",
+    description: "Get spending breakdown by category for a period",
+    input_schema: {
+      type: "object",
+      properties: {
+        period: {
+          type: "string",
+          enum: ["this_month", "last_month", "last_3_months"],
+        },
+      },
+    },
+    async execute(input, ctx) {
+      const agent = await getFinanceAgent(ctx.user.id);
+      if (!agent) return { byCategory: [], total: 0 };
+
+      const period = (input.period as string) ?? "this_month";
+      const now = new Date();
+      let startDate: Date;
+      let endDate: Date = now;
+
+      if (period === "this_month") {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      } else if (period === "last_month") {
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+      } else {
+        startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+      }
+
+      const result = await db
+        .select({
+          category: financeTransactions.category,
+          total: sql<string>`SUM(${financeTransactions.amount})`.as("total"),
+          count: sql<string>`COUNT(*)`.as("count"),
+        })
+        .from(financeTransactions)
+        .where(
+          and(
+            eq(financeTransactions.agentInstanceId, agent.id),
+            gte(
+              financeTransactions.transactionDate,
+              startDate.toISOString().slice(0, 10),
+            ),
+            lte(
+              financeTransactions.transactionDate,
+              endDate.toISOString().slice(0, 10),
+            ),
+          ),
+        )
+        .groupBy(financeTransactions.category);
+
+      const byCategory = result.map((r) => ({
+        category: r.category ?? "uncategorized",
+        total: Number(r.total),
+        count: Number(r.count),
+      }));
+
+      const total = byCategory.reduce((sum, c) => sum + c.total, 0);
+
+      return {
+        period,
+        startDate: startDate.toISOString().slice(0, 10),
+        endDate: endDate.toISOString().slice(0, 10),
+        byCategory: byCategory.sort((a, b) => b.total - a.total),
+        total,
+      };
+    },
+  },
+];

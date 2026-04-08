@@ -17,6 +17,7 @@ import insightRoutes from "./routes/insights.routes";
 import { createDataSourceRoutes } from "./routes/data-sources.routes";
 import deliveryRoutes from "./routes/delivery.routes";
 import webhookRoutes from "./routes/webhooks.routes";
+import chatRoutes from "./routes/chat.routes";
 
 // ─── Bootstrap ──────────────────────────────────────────────────────
 
@@ -48,6 +49,8 @@ app.route("/api/agents", createAgentRoutes(registry));
 app.route("/api/me/insights", insightRoutes);
 app.route("/api/me/agents", createDataSourceRoutes(registry));
 app.route("/api/me/delivery", deliveryRoutes);
+app.route("/api/me/chat", chatRoutes);
+app.route("/api/me", chatRoutes); // exposes /conversations under /api/me
 app.route("/api/webhooks", webhookRoutes);
 
 // ─── Start ──────────────────────────────────────────────────────────
