@@ -23,12 +23,12 @@
 ## Phase 2: Finance Agent (MVP)
 
 - [x] 2.1 Create `agents/finance/` directory with registration
-- [ ] 2.2 `plaid.adapter.ts` — Plaid Link token, public_token exchange, /transactions/sync, webhooks *(stub; needs PLAID_CLIENT_ID)*
+- [x] 2.2 `plaid.adapter.ts` — Plaid Link token, public_token exchange, /transactions/sync, webhooks — **verified with sandbox (385 txs synced)**
 - [ ] 2.3 `file-upload.adapter.ts` — file upload, Claude API extraction, Plaid Enrich *(stub; needs ANTHROPIC_API_KEY)*
 - [x] 2.4 `subscriptions.skill.ts` — 5 job categories (Visibility, Timing, Change, Cleanup, Insight)
-- [x] 2.5 `recurring-detection.ts` — pattern matching for subscriptions
+- [x] 2.5 `recurring-detection.ts` — pattern matching for subscriptions with category filtering
 - [x] 2.6 Register Finance agent in `bootstrap.ts`
-- [x] 2.7 End-to-end test with fake transactions — detection verified, 8 insights produced
+- [x] 2.7 End-to-end test: Plaid sandbox → sync → detect subscriptions → produce insights
 
 ## Phase 3: Delivery
 

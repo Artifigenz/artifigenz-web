@@ -85,6 +85,7 @@ async function seedTestData() {
     merchantName: string;
     amount: string;
     accountName: string;
+    category: string;
   }> = [];
 
   // Netflix — $15.99/mo for 6 months
@@ -97,10 +98,11 @@ async function seedTestData() {
       merchantName: "Netflix",
       amount: "15.99",
       accountName: "Chase Checking",
+      category: "ENTERTAINMENT",
     });
   }
 
-  // Spotify — $9.99/mo for 4 months, then price change to $11.99
+  // Spotify — $9.99/mo for 4 months
   for (let i = 0; i < 3; i++) {
     const date = new Date(today);
     date.setMonth(date.getMonth() - (i + 1));
@@ -110,6 +112,7 @@ async function seedTestData() {
       merchantName: "Spotify",
       amount: "9.99",
       accountName: "Chase Checking",
+      category: "ENTERTAINMENT",
     });
   }
   // Most recent Spotify charge has a higher price
@@ -119,6 +122,7 @@ async function seedTestData() {
     merchantName: "Spotify",
     amount: "9.99",
     accountName: "Chase Checking",
+    category: "ENTERTAINMENT",
   });
 
   // Gym membership — $49.99/mo for 8 months
@@ -132,6 +136,7 @@ async function seedTestData() {
       merchantName: "Equinox",
       amount: "49.99",
       accountName: "Chase Checking",
+      category: "GENERAL_SERVICES",
     });
   }
 
@@ -147,6 +152,7 @@ async function seedTestData() {
       merchantName: "NY Times",
       amount: "17.00",
       accountName: "Amex Gold",
+      category: "ENTERTAINMENT",
     });
   }
 
@@ -157,6 +163,7 @@ async function seedTestData() {
     merchantName: "Starbucks",
     amount: "5.75",
     accountName: "Chase Checking",
+    category: "FOOD_AND_DRINK",
   });
   fakeTxs.push({
     transactionDate: today.toISOString().slice(0, 10),
@@ -164,6 +171,7 @@ async function seedTestData() {
     merchantName: "Amazon",
     amount: "42.99",
     accountName: "Amex Gold",
+    category: "GENERAL_MERCHANDISE",
   });
 
   await db.insert(financeTransactions).values(

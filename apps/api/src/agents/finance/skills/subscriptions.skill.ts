@@ -82,6 +82,7 @@ export const subscriptionsSkill: SkillDefinition = {
         description: r.description,
         amount: Number(r.amount),
         accountName: r.accountName,
+        category: r.category,
       })),
     );
 

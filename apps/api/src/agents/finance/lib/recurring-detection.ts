@@ -7,7 +7,24 @@ export interface TxInput {
   description: string;
   amount: number;
   accountName: string | null;
+  category: string | null;
 }
+
+/**
+ * Plaid categories that should NEVER be considered subscriptions.
+ * Plaid uses UPPER_SNAKE_CASE for category.primary.
+ */
+const NON_SUBSCRIPTION_CATEGORIES = new Set([
+  "FOOD_AND_DRINK",
+  "TRAVEL",
+  "GENERAL_MERCHANDISE",
+  "TRANSFER_IN",
+  "TRANSFER_OUT",
+  "LOAN_PAYMENTS",
+  "BANK_FEES",
+  "INCOME",
+  "MEDICAL",
+]);
 
 export type Frequency = "weekly" | "monthly" | "quarterly" | "annual";
 
@@ -48,6 +65,7 @@ export function detectRecurring(transactions: TxInput[]): DetectedSubscription[]
 
   for (const tx of transactions) {
     if (tx.amount <= 0) continue; // Skip refunds/deposits
+    if (tx.category && NON_SUBSCRIPTION_CATEGORIES.has(tx.category)) continue;
 
     const merchantKey = normalizeMerchant(tx.merchantName ?? tx.description);
     if (!merchantKey) continue;
@@ -60,8 +78,9 @@ export function detectRecurring(transactions: TxInput[]): DetectedSubscription[]
 
   const detected: DetectedSubscription[] = [];
 
-  for (const [key, txs] of groups.entries()) {
-    if (txs.length < 2) continue;
+  for (const [, txs] of groups.entries()) {
+    // Require at least 3 occurrences to claim a recurring pattern
+    if (txs.length < 3) continue;
 
     // Sort oldest → newest
     const sorted = [...txs].sort((a, b) =>
