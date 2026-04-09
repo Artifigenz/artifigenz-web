@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useUser, useClerk, useAuth } from '@clerk/nextjs';
 import { useTheme } from '@/components/ThemeProvider';
 import styles from './ProfileMenu.module.css';
@@ -14,7 +13,6 @@ export default function ProfileMenu() {
   const { isLoaded: authLoaded, isSignedIn } = useAuth();
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
-  const router = useRouter();
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -32,8 +30,7 @@ export default function ProfileMenu() {
 
   const handleSignOut = async () => {
     setOpen(false);
-    await signOut();
-    router.replace('/sign-in');
+    await signOut({ redirectUrl: '/' });
   };
 
   if (!authLoaded) {
