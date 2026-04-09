@@ -17,7 +17,7 @@ export interface ApiError {
 export class ApiClient {
   constructor(private getToken: GetToken) {}
 
-  private async request<T>(
+  async request<T>(
     method: string,
     path: string,
     body?: unknown,
@@ -56,6 +56,9 @@ export class ApiClient {
   post<T>(path: string, body?: unknown) {
     return this.request<T>('POST', path, body);
   }
+  put<T>(path: string, body?: unknown) {
+    return this.request<T>('PUT', path, body);
+  }
   patch<T>(path: string, body?: unknown) {
     return this.request<T>('PATCH', path, body);
   }
@@ -71,20 +74,39 @@ export class ApiClient {
       email: string;
       name: string | null;
       avatarUrl: string | null;
-      timezone: string;
-      locale: string;
-      currency: string;
+      timezone: string | null;
+      locale: string | null;
+      currency: string | null;
       onboardingCompleted: boolean;
+      chatCustomInstructions: string | null;
     }>('/api/me');
   }
 
   async patchMe(updates: {
+    name?: string;
     timezone?: string;
     locale?: string;
     currency?: string;
     onboardingCompleted?: boolean;
+    chatCustomInstructions?: string | null;
   }) {
     return this.patch<{ user: unknown }>('/api/me', updates);
+  }
+
+  async getChatInstructions() {
+    return this.get<{ instructions: string | null }>('/api/me/chat/instructions');
+  }
+
+  async updateChatInstructions(instructions: string | null) {
+    return this.put<void>('/api/me/chat/instructions', { instructions });
+  }
+
+  async requestAccountDeletion() {
+    return this.post<{ sent: true }>('/api/me/delete/request');
+  }
+
+  async confirmAccountDeletion(code: string) {
+    return this.post<void>('/api/me/delete/confirm', { code });
   }
 
   async getAgents() {

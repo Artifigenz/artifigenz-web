@@ -77,6 +77,256 @@
   color: var(--text-dim);
 }
 
+.textarea {
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 400;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 12px 14px;
+  width: 100%;
+  max-width: 560px;
+  outline: none;
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.55;
+  transition: border-color 0.15s ease;
+}
+
+.textarea:focus {
+  border-color: var(--text);
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  max-width: 560px;
+}
+
+.toggleRow + .toggleRow {
+  border-top: 1px solid var(--border-light);
+}
+
+.toggleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.toggleTitle {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.toggleSubtitle {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--border-light);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border: none;
+  padding: 0;
+}
+
+.switchOn {
+  background: var(--accent);
+}
+
+.switchThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.switchOn .switchThumb {
+  transform: translateX(16px);
+}
+
+.rowActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.primaryBtn {
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--accent-text);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 9px 18px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ghostBtn {
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border-light);
+  padding: 9px 18px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.ghostBtn:hover:not(:disabled) {
+  border-color: var(--text);
+}
+
+.dangerBtn {
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #c44;
+  background: transparent;
+  border: 1px solid #c44;
+  padding: 9px 18px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dangerBtn:hover:not(:disabled) {
+  background: #c44;
+  color: #fff;
+}
+
+.dangerBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.status {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+
+.statusSaved {
+  color: #4a9d4a;
+}
+
+.statusError {
+  color: #c44;
+}
+
+.inlineField {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  max-width: 560px;
+}
+
+.inlineField .field {
+  flex: 1;
+  min-width: 200px;
+  margin-bottom: 0;
+}
+
+/* Danger zone */
+.dangerSection {
+  border: 1px solid #c4444433;
+  border-radius: 14px;
+  padding: 20px 24px;
+  background: #c4444408;
+  max-width: 560px;
+}
+
+.dangerTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #c44;
+  margin: 0 0 6px;
+}
+
+.dangerCopy {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal {
+  background: var(--menu-bg, #fff);
+  border: 1px solid var(--menu-border, var(--border-light));
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modalTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.modalCopy {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  line-height: 1.55;
+  margin: 0 0 20px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
 .modeRow {
   display: flex;
   gap: 6px;

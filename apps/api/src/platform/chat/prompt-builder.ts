@@ -128,6 +128,12 @@ export function buildSystemPrompt(ctx: ChatPromptContext): string {
 - Locale: ${ctx.user.locale ?? "en-US"}`;
   layers.push(userLayer);
 
+  // Layer 2.5: User custom instructions — highest priority, persists across
+  // all conversations. Matches ChatGPT's Custom Instructions feature.
+  if (ctx.user.chatCustomInstructions?.trim()) {
+    layers.push(`## Custom Instructions\n${ctx.user.chatCustomInstructions.trim()}`);
+  }
+
   // Layer 3: Active agents + goals
   if (ctx.activeAgents.length > 0) {
     const agentList = ctx.activeAgents

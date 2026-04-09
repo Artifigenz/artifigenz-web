@@ -23,10 +23,16 @@ export const users = pgTable(
     email: varchar("email", { length: 255 }).notNull(),
     name: varchar("name", { length: 255 }),
     avatarUrl: text("avatar_url"),
-    timezone: varchar("timezone", { length: 50 }).default("UTC"),
-    locale: varchar("locale", { length: 10 }).default("en-US"),
-    currency: varchar("currency", { length: 3 }).default("USD"),
+    // Locale settings — auto-detected from browser on first login, user-editable
+    timezone: varchar("timezone", { length: 50 }),
+    locale: varchar("locale", { length: 10 }),
+    currency: varchar("currency", { length: 3 }),
     onboardingCompleted: boolean("onboarding_completed").default(false),
+    // Chat custom instructions — injected as a system prompt layer
+    chatCustomInstructions: text("chat_custom_instructions"),
+    // Delete-account verification
+    deletionCode: varchar("deletion_code", { length: 6 }),
+    deletionCodeExpiresAt: timestamp("deletion_code_expires_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
     lastActiveAt: timestamp("last_active_at", { withTimezone: true }),
