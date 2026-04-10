@@ -29,7 +29,7 @@
   align-items: center;
   max-width: 820px;
   margin: 0 auto;
-  margin-bottom: 36px;
+  margin-bottom: 64px;
 }
 
 .title {
@@ -92,14 +92,9 @@
   width: 100%;
   max-width: 1180px;
   border: 1px solid var(--border-light);
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-  border-bottom-left-radius: 16px;
-  border-bottom-right-radius: 16px;
-  background: var(--card-bg);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.14), 0 8px 24px rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  background: transparent;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.04);
   text-align: left;
   overflow: hidden;
 }
@@ -214,7 +209,7 @@
   padding: 12px 18px;
   border: 1px solid var(--border-light);
   border-radius: 12px;
-  background: var(--card-bg);
+  background: transparent;
 }
 
 .dAgentIcon {
@@ -290,7 +285,7 @@
   padding: 12px 16px;
   border: 1px solid var(--border-light);
   border-radius: 14px;
-  background: var(--card-bg);
+  background: transparent;
 }
 
 .dChatPlaceholder {
@@ -334,13 +329,13 @@
 .mobile {
   position: absolute;
   z-index: 2;
-  right: 4%;
-  top: 8px;
+  right: -1%;
+  top: 64px;
   width: 240px;
   border: 1px solid var(--border-light);
   border-radius: 28px;
   background: var(--bg);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.22), 0 6px 18px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.18), 0 6px 18px rgba(0, 0, 0, 0.08);
   text-align: left;
   overflow: hidden;
   padding-bottom: 14px;
@@ -410,7 +405,7 @@
   padding: 9px 11px;
   border: 1px solid var(--border-light);
   border-radius: 9px;
-  background: var(--card-bg);
+  background: transparent;
 }
 
 .mAgentIcon {
@@ -482,7 +477,7 @@
   margin: 0 14px;
   border: 1px solid var(--border-light);
   border-radius: 11px;
-  background: var(--card-bg);
+  background: transparent;
 }
 
 .mChatPlaceholder {
