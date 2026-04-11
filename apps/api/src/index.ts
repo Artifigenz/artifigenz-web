@@ -78,9 +78,12 @@ app.route("/api/webhooks", webhookRoutes);
 // ─── Start ──────────────────────────────────────────────────────────
 
 const port = parseInt(process.env.PORT ?? "4000");
+// Bind to all interfaces in production so Railway / other PaaS proxies can reach us.
+// Default to localhost in dev for safety.
+const hostname = process.env.NODE_ENV === "production" ? "0.0.0.0" : "localhost";
 
-serve({ fetch: app.fetch, port }, (info) => {
-  console.log(`\n  Artifigenz API running on http://localhost:${info.port}\n`);
+serve({ fetch: app.fetch, port, hostname }, (info) => {
+  console.log(`\n  Artifigenz API listening on ${hostname}:${info.port}\n`);
 });
 
 // ─── Workers & Scheduler ────────────────────────────────────────────
@@ -100,6 +103,8 @@ async function startWorkers() {
     maxRetriesPerRequest: 1,
     retryStrategy: () => null,
     tls: useTls ? {} : undefined,
+    // Force IPv4 — some hosts (Railway, Fly) don't reach Upstash via IPv6
+    family: 4,
   });
 
   try {
