@@ -1,11 +1,9 @@
 /**
  * API client — wraps fetch() with Clerk JWT auth.
- *
- * Typical usage via the useApiClient() hook, which creates an instance
- * bound to the current Clerk session's getToken() function.
+ * Mirrors the web ApiClient so both platforms share the same contract.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+import { API_URL } from './config';
 
 export type GetToken = () => Promise<string | null>;
 
@@ -17,11 +15,7 @@ export interface ApiError {
 export class ApiClient {
   constructor(private getToken: GetToken) {}
 
-  async request<T>(
-    method: string,
-    path: string,
-    body?: unknown,
-  ): Promise<T> {
+  async request<T>(method: string, path: string, body?: unknown): Promise<T> {
     const token = await this.getToken();
     if (!token) {
       throw { status: 401, message: 'Not authenticated' } satisfies ApiError;
@@ -93,22 +87,6 @@ export class ApiClient {
     return this.patch<{ user: unknown }>('/api/me', updates);
   }
 
-  async getChatInstructions() {
-    return this.get<{ instructions: string | null }>('/api/me/chat/instructions');
-  }
-
-  async updateChatInstructions(instructions: string | null) {
-    return this.put<void>('/api/me/chat/instructions', { instructions });
-  }
-
-  async requestAccountDeletion() {
-    return this.post<{ sent: true }>('/api/me/delete/request');
-  }
-
-  async confirmAccountDeletion(code: string) {
-    return this.post<void>('/api/me/delete/confirm', { code });
-  }
-
   async getAgents() {
     return this.get<Array<{
       id: string;
@@ -130,24 +108,10 @@ export class ApiClient {
     }>>('/api/agents/me/instances');
   }
 
-  async activateAgent(agentTypeId: string, goal?: string, status?: 'active' | 'onboarding') {
+  async activateAgent(agentTypeId: string, goal?: string) {
     return this.post<{ agentInstance: { id: string; agentTypeId: string; status: string } }>(
       `/api/agents/me/${agentTypeId}/activate`,
-      { goal, status },
-    );
-  }
-
-  async updateAgentInstance(agentInstanceId: string, updates: { goal?: string; status?: string }) {
-    return this.patch<{ agentInstance: { id: string; status: string } }>(
-      `/api/agents/me/instances/${agentInstanceId}`,
-      updates,
-    );
-  }
-
-  /** Sync all Plaid connections + run skill inline. Takes ~10-15s in sandbox. */
-  async syncAgent(agentInstanceId: string) {
-    return this.post<{ transactions: number; insights: number }>(
-      `/api/upload/sync/${agentInstanceId}`,
+      { goal },
     );
   }
 
@@ -183,57 +147,6 @@ export class ApiClient {
 
   async markInsightRead(insightId: string) {
     return this.patch<void>(`/api/me/insights/${insightId}/read`);
-  }
-
-  /**
-   * Upload a bank statement file. Uses FormData (not JSON), so we bypass
-   * the normal request() method and construct the fetch manually.
-   */
-  async uploadFile(formData: FormData): Promise<{ transactions: number; insights: number }> {
-    const token = await this.getToken();
-    if (!token) throw { status: 401, message: 'Not authenticated' } satisfies ApiError;
-
-    const res = await fetch(`${API_URL}/api/upload`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw {
-        status: res.status,
-        message: (data as { error?: string }).error ?? `Upload failed (${res.status})`,
-      } satisfies ApiError;
-    }
-
-    return data as { transactions: number; insights: number };
-  }
-
-  /**
-   * Upload a health data export (Apple Health XML, CSV, etc.).
-   */
-  async uploadHealthFile(formData: FormData): Promise<{ metrics: number; insights: number }> {
-    const token = await this.getToken();
-    if (!token) throw { status: 401, message: 'Not authenticated' } satisfies ApiError;
-
-    const res = await fetch(`${API_URL}/api/upload/health`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw {
-        status: res.status,
-        message: (data as { error?: string }).error ?? `Upload failed (${res.status})`,
-      } satisfies ApiError;
-    }
-
-    return data as { metrics: number; insights: number };
   }
 
   async getDeliveryPreferences() {
