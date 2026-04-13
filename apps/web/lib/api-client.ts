@@ -156,6 +156,7 @@ export class ApiClient {
         id: string;
         title: string;
         description: string | null;
+        insightTypeId: string;
         data: Record<string, unknown>;
         isCritical: boolean;
         isRead: boolean;
@@ -168,6 +169,32 @@ export class ApiClient {
 
   async markInsightRead(insightId: string) {
     return this.patch<void>(`/api/me/insights/${insightId}/read`);
+  }
+
+  /**
+   * Upload a bank statement file. Uses FormData (not JSON), so we bypass
+   * the normal request() method and construct the fetch manually.
+   */
+  async uploadFile(formData: FormData): Promise<{ transactions: number; insights: number }> {
+    const token = await this.getToken();
+    if (!token) throw { status: 401, message: 'Not authenticated' } satisfies ApiError;
+
+    const res = await fetch(`${API_URL}/api/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw {
+        status: res.status,
+        message: (data as { error?: string }).error ?? `Upload failed (${res.status})`,
+      } satisfies ApiError;
+    }
+
+    return data as { transactions: number; insights: number };
   }
 
   async getDeliveryPreferences() {

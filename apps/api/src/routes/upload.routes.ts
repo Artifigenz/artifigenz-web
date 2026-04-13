@@ -1,0 +1,161 @@
+import { Hono } from "hono";
+import { eq, and } from "drizzle-orm";
+import { writeFile, mkdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import {
+  db,
+  agentInstances,
+  dataSourceConnections,
+  fileUploads,
+} from "@artifigenz/db";
+import { clerkAuth } from "../platform/auth/clerk-middleware";
+import { fileUploadAdapter } from "../agents/finance/data-sources/file-upload.adapter";
+import { SkillExecutor } from "../platform/execution/skill-executor";
+import { AgentRegistry } from "../platform/registry/agent-registry";
+import { register as registerFinance } from "../agents/finance";
+
+const app = new Hono();
+app.use("/*", clerkAuth);
+
+// Inline registry for skill execution (no import from bootstrap to avoid
+// circular deps — just register finance here)
+const inlineRegistry = new AgentRegistry();
+registerFinance(inlineRegistry);
+const executor = new SkillExecutor(inlineRegistry);
+
+/**
+ * POST /api/upload
+ *
+ * Accepts a multipart file upload (bank statement PDF, CSV, image).
+ * Processes everything inline (no Redis workers needed):
+ *   1. Save file to disk
+ *   2. Create/reuse a file-upload data source connection
+ *   3. Create a file_uploads row
+ *   4. Parse with Claude (via file upload adapter)
+ *   5. Run subscriptions skill on the new data
+ *   6. Return the results
+ *
+ * This takes ~20-30s for Claude parsing. The client should show a loader.
+ */
+app.post("/", async (c) => {
+  const user = c.get("user");
+
+  // Parse multipart form data
+  const formData = await c.req.formData();
+  const file = formData.get("file");
+
+  if (!file || !(file instanceof File)) {
+    return c.json({ error: "No file provided. Send a 'file' field." }, 400);
+  }
+
+  const allowedTypes = [
+    "application/pdf",
+    "text/csv",
+    "text/plain",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+  ];
+  if (!allowedTypes.some((t) => file.type.startsWith(t.split("/")[0]))) {
+    return c.json(
+      {
+        error: `Unsupported file type: ${file.type}. Accepted: PDF, CSV, text, JPEG, PNG, WebP.`,
+      },
+      400,
+    );
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    return c.json({ error: "File too large. Max 10MB." }, 400);
+  }
+
+  // ─── 1. Find or create finance agent instance ──────────────────
+  const [agentInstance] = await db
+    .select()
+    .from(agentInstances)
+    .where(
+      and(
+        eq(agentInstances.userId, user.id),
+        eq(agentInstances.agentTypeId, "finance"),
+        eq(agentInstances.status, "active"),
+      ),
+    )
+    .limit(1);
+
+  if (!agentInstance) {
+    return c.json(
+      { error: "Finance agent not activated. Activate it first." },
+      400,
+    );
+  }
+
+  // ─── 2. Save file to disk ─────────────────────────────────────
+  const uploadDir = join(tmpdir(), "artifigenz-uploads", user.id);
+  await mkdir(uploadDir, { recursive: true });
+  const filepath = join(uploadDir, `${Date.now()}-${file.name}`);
+  const buffer = Buffer.from(await file.arrayBuffer());
+  await writeFile(filepath, buffer);
+
+  // ─── 3. Create/reuse data source connection ───────────────────
+  const connection = await fileUploadAdapter.finalizeConnection({
+    agentInstanceId: agentInstance.id,
+    dataSourceTypeId: "file-upload",
+  });
+
+  // ─── 4. Create file_uploads row ───────────────────────────────
+  await db.insert(fileUploads).values({
+    dataSourceConnectionId: connection.id,
+    originalFilename: file.name,
+    fileType: file.type.includes("pdf")
+      ? "pdf"
+      : file.type.includes("csv") || file.type.includes("text")
+        ? "csv"
+        : "image",
+    storagePath: filepath,
+    fileSizeBytes: file.size,
+    extractionStatus: "pending",
+  });
+
+  // ─── 5. Parse with Claude (inline, ~20s) ──────────────────────
+  const syncResult = await fileUploadAdapter.sync(connection);
+
+  // ─── 6. Run subscriptions skill on the new data ───────────────
+  const skillResult = await executor.execute({
+    agentInstanceId: agentInstance.id,
+    skillId: "finance.subscriptions",
+  });
+
+  return c.json({
+    status: "processed",
+    file: {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    },
+    transactions: syncResult.length,
+    insights: skillResult.insightIds.length,
+  });
+});
+
+/**
+ * GET /api/upload/:fileId/status
+ * Check status of a file upload (for future async processing)
+ */
+app.get("/:fileId/status", async (c) => {
+  const [file] = await db
+    .select()
+    .from(fileUploads)
+    .where(eq(fileUploads.id, c.req.param("fileId")))
+    .limit(1);
+
+  if (!file) return c.json({ error: "Not found" }, 404);
+
+  return c.json({
+    status: file.extractionStatus,
+    transactionCount: file.transactionCount,
+    processedAt: file.processedAt,
+  });
+});
+
+export default app;
