@@ -1135,13 +1135,9 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
                                 }}
                                 onMouseEnter={(e) => {
                                   if (plaidBusy || !agentInstanceId) return;
-                                  e.currentTarget.style.transform = 'translateY(-2px)';
-                                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)';
-                                  e.currentTarget.style.background = 'color-mix(in srgb, var(--bg), var(--text) 2%)';
+                                  e.currentTarget.style.background = 'color-mix(in srgb, var(--bg), var(--text) 4%)';
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform = 'translateY(0)';
-                                  e.currentTarget.style.boxShadow = 'none';
                                   e.currentTarget.style.background = 'var(--bg)';
                                 }}
                               >
@@ -1187,13 +1183,9 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
                             }}
                             onMouseEnter={(e) => {
                               if (plaidBusy || !agentInstanceId) return;
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)';
-                              e.currentTarget.style.background = 'color-mix(in srgb, var(--bg), var(--text) 2%)';
+                              e.currentTarget.style.background = 'color-mix(in srgb, var(--bg), var(--text) 4%)';
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = 'none';
                               e.currentTarget.style.background = 'transparent';
                             }}
                           >
