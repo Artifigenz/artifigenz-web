@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@artifigenz/shared": "*",
+    "@clerk/nextjs": "^7.0.11",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-plaid-link": "^4.1.1"
   },
   "devDependencies": {
     "@types/node": "^20",
