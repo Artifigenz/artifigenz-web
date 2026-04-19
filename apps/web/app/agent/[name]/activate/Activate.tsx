@@ -1120,6 +1120,7 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
                                   padding: '18px 12px 16px',
                                   background: 'var(--bg)',
                                   border: '1px solid var(--border-light)',
+                                  outline: 'none',
                                   display: 'flex',
                                   flexDirection: 'column',
                                   alignItems: 'center',
@@ -1130,18 +1131,18 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
                                   textAlign: 'center',
                                   cursor: plaidBusy ? 'wait' : 'pointer',
                                   opacity: plaidBusy && !isConnecting ? 0.5 : 1,
-                                  transition: 'border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease',
+                                  transition: 'transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease',
                                 }}
                                 onMouseEnter={(e) => {
                                   if (plaidBusy || !agentInstanceId) return;
-                                  e.currentTarget.style.borderColor = 'var(--text)';
-                                  e.currentTarget.style.transform = 'translateY(-1px)';
-                                  e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.05)';
+                                  e.currentTarget.style.transform = 'translateY(-2px)';
+                                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)';
+                                  e.currentTarget.style.background = 'color-mix(in srgb, var(--bg), var(--text) 2%)';
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.currentTarget.style.borderColor = 'var(--border-light)';
                                   e.currentTarget.style.transform = 'translateY(0)';
                                   e.currentTarget.style.boxShadow = 'none';
+                                  e.currentTarget.style.background = 'var(--bg)';
                                 }}
                               >
                                 {renderLogo(institution, connection)}
@@ -1170,6 +1171,7 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
                               padding: '18px 12px 16px',
                               background: 'transparent',
                               border: '1.5px dashed var(--border-light)',
+                              outline: 'none',
                               display: 'flex',
                               flexDirection: 'column',
                               alignItems: 'center',
@@ -1181,15 +1183,17 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
                               textAlign: 'center',
                               cursor: plaidBusy ? 'wait' : 'pointer',
                               opacity: plaidBusy || !agentInstanceId ? 0.6 : 1,
-                              transition: 'border-color 0.15s ease, background 0.15s ease',
+                              transition: 'transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease',
                             }}
                             onMouseEnter={(e) => {
                               if (plaidBusy || !agentInstanceId) return;
-                              e.currentTarget.style.borderColor = 'var(--text)';
-                              e.currentTarget.style.background = 'var(--bg)';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)';
+                              e.currentTarget.style.background = 'color-mix(in srgb, var(--bg), var(--text) 2%)';
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = 'var(--border-light)';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
                               e.currentTarget.style.background = 'transparent';
                             }}
                           >
