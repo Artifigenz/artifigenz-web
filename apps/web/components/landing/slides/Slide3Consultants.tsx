@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { AGENTS } from '@artifigenz/shared';
 import * as Icons from '@/components/sections/AgentIcons';
+import ComingSoonBadge from '../ComingSoonBadge';
 import { LANDING_AGENT_ICONS } from '../LandingAgentIcons';
 import Slide, { type SlideProps } from './Slide';
 import sharedStyles from './Slide.module.css';
@@ -106,13 +106,7 @@ export default function Slide3Consultants(props: SlideProps) {
           </div>
         </div>
 
-        <Link href="/sign-up" className={`${sharedStyles.cta} ${styles.cta}`}>
-          Get started
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12h14" />
-            <path d="M12 5l7 7-7 7" />
-          </svg>
-        </Link>
+        <ComingSoonBadge />
       </div>
     </Slide>
   );
