@@ -127,6 +127,8 @@ export class ApiClient {
       status: string;
       goal: string | null;
       lastAnalyzedAt: string | null;
+      createdAt: string | null;
+      updatedAt: string | null;
     }>>('/api/agents/me/instances');
   }
 
@@ -141,6 +143,72 @@ export class ApiClient {
     return this.patch<{ agentInstance: { id: string; status: string } }>(
       `/api/agents/me/instances/${agentInstanceId}`,
       updates,
+    );
+  }
+
+  async deactivateAgent(agentInstanceId: string) {
+    return this.delete<void>(`/api/agents/me/instances/${agentInstanceId}`);
+  }
+
+  /** Get existing instance for this user+agentType, or create one. */
+  async getOrCreateAgentInstance(
+    agentTypeId: string,
+    opts?: { goal?: string; status?: 'active' | 'onboarding' },
+  ) {
+    const instances = await this.getMyAgents();
+    const existing = instances.find((i) => i.agentTypeId === agentTypeId);
+    if (existing) return existing;
+    const { agentInstance } = await this.activateAgent(agentTypeId, opts?.goal, opts?.status);
+    return { ...agentInstance, goal: opts?.goal ?? null, lastAnalyzedAt: null };
+  }
+
+  // ─── Data source connections (Plaid etc.) ─────────────────────
+
+  async listConnections(agentInstanceId: string) {
+    return this.get<Array<{
+      id: string;
+      dataSourceTypeId: string;
+      displayName: string | null;
+      status: string;
+      lastSyncedAt: string | null;
+      institutionId: string | null;
+      institutionName: string | null;
+      accounts: Array<{ id: string; name: string; mask: string | null }>;
+    }>>(`/api/me/agents/${agentInstanceId}/connections`);
+  }
+
+  async initConnection(
+    agentInstanceId: string,
+    dataSourceTypeId: string,
+    options?: { redirectUri?: string },
+  ) {
+    return this.post<{ linkToken: string; expiration: string }>(
+      `/api/me/agents/${agentInstanceId}/connections/${dataSourceTypeId}/init`,
+      options ?? {},
+    );
+  }
+
+  async finalizeConnection(
+    agentInstanceId: string,
+    dataSourceTypeId: string,
+    body: {
+      publicToken: string;
+      metadata: {
+        institutionName?: string;
+        institutionId?: string;
+        accounts?: Array<{ id: string; name: string; mask: string | null }>;
+      };
+    },
+  ) {
+    return this.post<{ connection: { id: string; dataSourceTypeId: string } }>(
+      `/api/me/agents/${agentInstanceId}/connections/${dataSourceTypeId}/finalize`,
+      body,
+    );
+  }
+
+  async disconnectConnection(agentInstanceId: string, connectionId: string) {
+    return this.delete<void>(
+      `/api/me/agents/${agentInstanceId}/connections/${connectionId}`,
     );
   }
 

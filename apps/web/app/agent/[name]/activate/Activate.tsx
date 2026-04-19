@@ -1,15 +1,29 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import { usePlaidLink } from 'react-plaid-link';
 import Header from '@/components/layout/Header';
 import { AGENTS } from '@artifigenz/shared';
 import { useActivatedAgents } from '@/hooks/useActivatedAgents';
+import { useApiClient } from '@/hooks/useApiClient';
+import { clearPlaidPending, savePlaidPending } from '@/lib/plaid-pending';
 import * as Icons from '@/components/sections/AgentIcons';
 import * as CapIcons from '@/components/sections/CapabilityIcons';
 import styles from './page.module.css';
+
+interface PlaidConnection {
+  id: string;
+  dataSourceTypeId: string;
+  displayName: string | null;
+  status: string;
+  lastSyncedAt: string | null;
+  institutionId: string | null;
+  institutionName: string | null;
+  accounts: Array<{ id: string; name: string; mask: string | null }>;
+}
 
 const ICON_MAP: Record<string, React.ComponentType> = {
   Finance: Icons.FinanceIcon,
@@ -94,65 +108,6 @@ interface ActivationData {
   skills: ActivationSkill[];
   estimatedSetupSeconds: number;
 }
-
-interface MockAccount {
-  label: string;
-  last4: string;
-}
-interface MockBank {
-  bank: string;
-  accounts: MockAccount[];
-}
-
-// UI mockup: cycled through as the user taps "Add another" during onboarding.
-const MOCK_BANK_POOL: MockBank[] = [
-  { bank: 'Chase', accounts: [
-    { label: 'Checking', last4: '4521' },
-    { label: 'Sapphire Preferred', last4: '8832' },
-  ]},
-  { bank: 'American Express', accounts: [
-    { label: 'Platinum', last4: '1007' },
-  ]},
-  { bank: 'Wells Fargo', accounts: [
-    { label: 'Everyday Checking', last4: '3310' },
-    { label: 'Way2Save', last4: '7821' },
-    { label: 'Active Cash', last4: '2244' },
-  ]},
-  { bank: 'Bank of America', accounts: [
-    { label: 'Advantage Plus', last4: '9921' },
-    { label: 'Cash Rewards', last4: '3347' },
-  ]},
-  { bank: 'Capital One', accounts: [
-    { label: '360 Checking', last4: '1155' },
-    { label: 'Venture', last4: '6602' },
-  ]},
-  { bank: 'Citi', accounts: [
-    { label: 'Priority Checking', last4: '7789' },
-    { label: 'Double Cash', last4: '4410' },
-  ]},
-  { bank: 'US Bank', accounts: [
-    { label: 'Easy Checking', last4: '5508' },
-    { label: 'Altitude Go', last4: '2217' },
-  ]},
-  { bank: 'PNC', accounts: [
-    { label: 'Virtual Wallet', last4: '8833' },
-  ]},
-  { bank: 'Charles Schwab', accounts: [
-    { label: 'High Yield Checking', last4: '4471' },
-    { label: 'Brokerage', last4: '9924' },
-  ]},
-  { bank: 'Ally', accounts: [
-    { label: 'Interest Checking', last4: '3390' },
-    { label: 'Online Savings', last4: '1122' },
-  ]},
-  { bank: 'SoFi', accounts: [
-    { label: 'Checking & Savings', last4: '6673' },
-  ]},
-  { bank: 'Discover', accounts: [
-    { label: 'Cashback Debit', last4: '4405' },
-    { label: 'It Card', last4: '8890' },
-  ]},
-];
 
 const ACTIVATION_DATA: Record<string, ActivationData> = {
   finance: {
@@ -401,6 +356,7 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
   const { name } = use(params);
   const router = useRouter();
   const { activate } = useActivatedAgents();
+  const api = useApiClient();
   const { user } = useUser();
   const firstName =
     user?.firstName ||
@@ -413,11 +369,13 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
   const IconComponent = agent ? ICON_MAP[agent.name] : undefined;
 
   const [step, setStep] = useState(0);
-  const [connectedBanks, setConnectedBanks] = useState<MockBank[]>([]);
-  const connectedAccountNames = connectedBanks.flatMap((cb) =>
-    cb.accounts.map((a) => `${cb.bank} ${a.label}`)
-  );
-  const totalAccountCount = connectedAccountNames.length;
+  // Backend-backed state: agent instance + real Plaid connections
+  const [agentInstanceId, setAgentInstanceId] = useState<string | null>(null);
+  const [connections, setConnections] = useState<PlaidConnection[]>([]);
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [plaidBusy, setPlaidBusy] = useState(false); // true while finalizing + syncing
+  const [activating, setActivating] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [newGoal, setNewGoal] = useState('');
   const [activeSkills, setActiveSkills] = useState<Record<string, boolean>>(() => {
@@ -466,6 +424,115 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
   }, [targetGreeting]);
   const displayedGreeting = targetGreeting.slice(0, typedChars);
   const isTyping = typedChars < targetGreeting.length;
+
+  // ─── Plaid integration ──────────────────────────────────────────────
+  // Create (or recover) an onboarding agent instance the first time the
+  // user expands Step 1. All Plaid calls are scoped to this instance.
+  const instanceRequested = useRef(false);
+  useEffect(() => {
+    if (step !== 1 || !data?.requiresAccounts) return;
+    if (agentInstanceId || instanceRequested.current) return;
+    instanceRequested.current = true;
+    (async () => {
+      try {
+        const inst = await api.getOrCreateAgentInstance(slug, { status: 'onboarding' });
+        setAgentInstanceId(inst.id);
+      } catch (err) {
+        instanceRequested.current = false;
+        setConnectError(err instanceof Error ? err.message : 'Failed to start onboarding');
+      }
+    })();
+  }, [step, data?.requiresAccounts, agentInstanceId, api, slug]);
+
+  // Fetch existing connections whenever the instance id changes.
+  const refreshConnections = async (id: string) => {
+    const list = await api.listConnections(id);
+    setConnections(list);
+  };
+  useEffect(() => {
+    if (!agentInstanceId) return;
+    refreshConnections(agentInstanceId).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentInstanceId]);
+
+  // Plaid Link — token is pulled right before opening, one-shot per connect.
+  const { open: openPlaidLink, ready: plaidReady } = usePlaidLink({
+    token: linkToken,
+    onSuccess: async (publicToken, metadata) => {
+      if (!agentInstanceId) return;
+      setPlaidBusy(true);
+      setConnectError(null);
+      try {
+        await api.finalizeConnection(agentInstanceId, 'plaid', {
+          publicToken,
+          metadata: {
+            institutionId: metadata.institution?.institution_id,
+            institutionName: metadata.institution?.name,
+            accounts: metadata.accounts.map((a) => ({
+              id: a.id,
+              name: a.name,
+              mask: a.mask ?? null,
+            })),
+          },
+        });
+        await refreshConnections(agentInstanceId);
+        // Kick off an inline sync so transactions + subscriptions show up.
+        // Fire-and-forget so the tile appears immediately.
+        api.syncAgent(agentInstanceId).catch(() => {});
+      } catch (err) {
+        setConnectError(err instanceof Error ? err.message : 'Failed to finalize bank');
+      } finally {
+        clearPlaidPending();
+        setPlaidBusy(false);
+        setLinkToken(null);
+      }
+    },
+    onExit: () => {
+      clearPlaidPending();
+      setLinkToken(null);
+      setPlaidBusy(false);
+    },
+  });
+
+  // Auto-open Plaid Link as soon as the SDK is ready with a fresh token.
+  useEffect(() => {
+    if (linkToken && plaidReady) openPlaidLink();
+  }, [linkToken, plaidReady, openPlaidLink]);
+
+  const connectBank = async () => {
+    if (!agentInstanceId || plaidBusy) return;
+    setConnectError(null);
+    setPlaidBusy(true);
+    try {
+      const redirectUri = `${window.location.origin}/plaid/oauth`;
+      const { linkToken: token } = await api.initConnection(agentInstanceId, 'plaid', {
+        redirectUri,
+      });
+      // Cache so the /plaid/oauth page can resume Link after an OAuth bank
+      // redirects the browser back.
+      savePlaidPending({
+        linkToken: token,
+        agentInstanceId,
+        returnTo: window.location.pathname,
+      });
+      setLinkToken(token);
+    } catch (err) {
+      setPlaidBusy(false);
+      setConnectError(err instanceof Error ? err.message : 'Failed to open Plaid');
+    }
+  };
+
+  const disconnectBank = async (connectionId: string) => {
+    if (!agentInstanceId) return;
+    // Optimistically remove so the tile disappears immediately
+    setConnections((prev) => prev.filter((c) => c.id !== connectionId));
+    try {
+      await api.disconnectConnection(agentInstanceId, connectionId);
+    } catch {
+      // On failure, refetch to restore truth
+      await refreshConnections(agentInstanceId);
+    }
+  };
 
   // Location-aware bank list for Step 0 Card 1
   const bankList = (() => {
@@ -518,23 +585,6 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
     );
   }
 
-  const addNextBank = () => {
-    setConnectedBanks((prev) => {
-      const taken = new Set(prev.map((b) => b.bank));
-      const next = MOCK_BANK_POOL.find((b) => !taken.has(b.bank));
-      if (next) return [...prev, next];
-      // Pool exhausted — synthesize a generic mock bank so the flow keeps working
-      const n = prev.length + 1;
-      return [...prev, {
-        bank: `Bank ${n}`,
-        accounts: [{ label: 'Checking', last4: String(4000 + n).slice(-4) }],
-      }];
-    });
-  };
-  const removeBank = (bankName: string) => {
-    setConnectedBanks((prev) => prev.filter((b) => b.bank !== bankName));
-  };
-
   const toggleGoal = (goal: string) => {
     setSelectedGoals((prev) =>
       prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
@@ -560,29 +610,38 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
 
   const activeSkillCount = Object.values(activeSkills).filter(Boolean).length;
 
-  const next = () => {
-    if (step === 0) setStep(data.requiresAccounts ? 1 : 2);
-    else if (step === 1) {
-      // Bank connect is the final step for account-based agents
-      activate({
-        slug,
-        activatedAt: Date.now(),
-        accounts: connectedAccountNames,
-        goals: selectedGoals,
-        skills: activeSkills,
-      });
-      router.push(`/agent/${slug}`);
+  const next = async () => {
+    if (step === 0) {
+      setStep(data.requiresAccounts ? 1 : 2);
+      return;
     }
-    else if (step === 2) setStep(3);
-    else if (step === 3) {
-      activate({
-        slug,
-        activatedAt: Date.now(),
-        accounts: connectedAccountNames,
-        goals: selectedGoals,
-        skills: activeSkills,
-      });
-      router.push(`/agent/${slug}`);
+    if (step === 1) {
+      // Bank connect is the final step for account-based agents:
+      // promote the onboarding instance to active and head to the dashboard.
+      if (connections.length === 0 || activating) return;
+      setActivating(true);
+      try {
+        await activate(slug, { status: 'active' });
+        router.push(`/agent/${slug}`);
+      } catch (err) {
+        setActivating(false);
+        setConnectError(err instanceof Error ? err.message : 'Failed to activate');
+      }
+      return;
+    }
+    if (step === 2) {
+      setStep(3);
+      return;
+    }
+    if (step === 3) {
+      setActivating(true);
+      try {
+        await activate(slug, { status: 'active', goal: selectedGoals[0] });
+        router.push(`/agent/${slug}`);
+      } catch (err) {
+        setActivating(false);
+        setConnectError(err instanceof Error ? err.message : 'Failed to activate');
+      }
     }
   };
 
@@ -870,96 +929,102 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
                       gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
                       gap: '12px',
                     }}>
-                      {connectedBanks.map((cb) => (
-                        <div
-                          key={cb.bank}
-                          style={{
-                            borderRadius: '14px',
-                            padding: '18px 18px 16px',
-                            background: 'var(--bg)',
-                            border: '1px solid var(--border-light)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '14px',
-                            minHeight: '220px',
-                            position: 'relative',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{
-                              width: '32px', height: '32px', borderRadius: '9px',
-                              background: 'color-mix(in srgb, var(--bg), var(--text) 8%)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: '0.8rem', fontWeight: 700, color: 'var(--text)',
-                              flexShrink: 0,
-                            }}>
-                              {cb.bank.charAt(0)}
-                            </div>
-                            <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {cb.bank}
-                            </div>
-                            <button
-                              type="button"
-                              aria-label={`Remove ${cb.bank}`}
-                              onClick={() => removeBank(cb.bank)}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                padding: 0,
-                                width: '22px',
-                                height: '22px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'var(--text-dim)',
-                                cursor: 'pointer',
-                                borderRadius: '6px',
+                      {connections.map((conn) => {
+                        const bankName = conn.institutionName ?? conn.displayName ?? 'Bank';
+                        return (
+                          <div
+                            key={conn.id}
+                            style={{
+                              borderRadius: '14px',
+                              padding: '18px 18px 16px',
+                              background: 'var(--bg)',
+                              border: '1px solid var(--border-light)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '14px',
+                              minHeight: '220px',
+                              position: 'relative',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{
+                                width: '32px', height: '32px', borderRadius: '9px',
+                                background: 'color-mix(in srgb, var(--bg), var(--text) 8%)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '0.8rem', fontWeight: 700, color: 'var(--text)',
                                 flexShrink: 0,
-                                transition: 'color 0.15s ease, background 0.15s ease',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.color = 'var(--text)';
-                                e.currentTarget.style.background = 'color-mix(in srgb, var(--bg), var(--text) 6%)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.color = 'var(--text-dim)';
-                                e.currentTarget.style.background = 'transparent';
-                              }}
-                            >
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                              </svg>
-                            </button>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            {cb.accounts.map((acc) => (
-                              <div
-                                key={acc.last4}
+                              }}>
+                                {bankName.charAt(0)}
+                              </div>
+                              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {bankName}
+                              </div>
+                              <button
+                                type="button"
+                                aria-label={`Remove ${bankName}`}
+                                onClick={() => disconnectBank(conn.id)}
                                 style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  padding: 0,
+                                  width: '22px',
+                                  height: '22px',
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: '8px',
-                                  fontSize: '0.74rem',
-                                  color: 'var(--text-mid)',
+                                  justifyContent: 'center',
+                                  color: 'var(--text-dim)',
+                                  cursor: 'pointer',
+                                  borderRadius: '6px',
+                                  flexShrink: 0,
+                                  transition: 'color 0.15s ease, background 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.color = 'var(--text)';
+                                  e.currentTarget.style.background = 'color-mix(in srgb, var(--bg), var(--text) 6%)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.color = 'var(--text-dim)';
+                                  e.currentTarget.style.background = 'transparent';
                                 }}
                               >
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                                  <path d="M20 6L9 17l-5-5" />
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
                                 </svg>
-                                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.label}</span>
-                                <span style={{ color: 'var(--text-dim)', fontVariantNumeric: 'tabular-nums', fontSize: '0.7rem' }}>
-                                  &bull;&bull;{acc.last4}
-                                </span>
-                              </div>
-                            ))}
+                              </button>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {conn.accounts.map((acc) => (
+                                <div
+                                  key={acc.id}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    fontSize: '0.74rem',
+                                    color: 'var(--text-mid)',
+                                  }}
+                                >
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                    <path d="M20 6L9 17l-5-5" />
+                                  </svg>
+                                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.name}</span>
+                                  {acc.mask && (
+                                    <span style={{ color: 'var(--text-dim)', fontVariantNumeric: 'tabular-nums', fontSize: '0.7rem' }}>
+                                      &bull;&bull;{acc.mask}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                      {/* Add tile — always present */}
+                        );
+                      })}
+                      {/* Add tile — opens Plaid Link via connectBank(). Disabled while a connect is in flight. */}
                       <button
                           type="button"
-                          onClick={addNextBank}
+                          onClick={connectBank}
+                          disabled={plaidBusy || !agentInstanceId}
                           style={{
                             borderRadius: '14px',
                             padding: '20px 16px',
@@ -973,10 +1038,12 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
                             minHeight: '220px',
                             fontFamily: 'inherit',
                             color: 'var(--text)',
-                            cursor: 'pointer',
+                            cursor: plaidBusy ? 'wait' : 'pointer',
+                            opacity: plaidBusy || !agentInstanceId ? 0.6 : 1,
                             transition: 'border-color 0.15s ease, background 0.15s ease',
                           }}
                           onMouseEnter={(e) => {
+                            if (plaidBusy || !agentInstanceId) return;
                             e.currentTarget.style.borderColor = 'var(--text)';
                             e.currentTarget.style.background = 'var(--bg)';
                           }}
@@ -996,10 +1063,23 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
                             </svg>
                           </div>
                           <span style={{ fontSize: '0.82rem', fontWeight: 500 }}>
-                            {connectedBanks.length === 0 ? 'Connect a bank' : 'Add another bank'}
+                            {plaidBusy
+                              ? 'Opening Plaid…'
+                              : connections.length === 0
+                                ? 'Connect a bank'
+                                : 'Add another bank'}
                           </span>
                         </button>
                     </div>
+                    {connectError && (
+                      <p style={{
+                        marginTop: '12px',
+                        fontSize: '0.75rem',
+                        color: '#dc2626',
+                      }}>
+                        {connectError}
+                      </p>
+                    )}
                   </div>
                   </div>
                 </div>
@@ -1178,15 +1258,16 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
                 <button
                   className={styles.primaryBtn}
                   onClick={next}
-                  disabled={connectedBanks.length === 0}
+                  disabled={connections.length === 0 || activating}
                   style={{
                     padding: '14px 36px',
                     fontSize: '0.9rem',
-                    opacity: connectedBanks.length === 0 ? 0.4 : 1,
-                    cursor: connectedBanks.length === 0 ? 'not-allowed' : 'pointer',
+                    opacity: connections.length === 0 || activating ? 0.4 : 1,
+                    cursor:
+                      connections.length === 0 || activating ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  Activate {agent.name} →
+                  {activating ? 'Activating…' : `Activate ${agent.name} →`}
                 </button>
               </div>
             </>
@@ -1276,8 +1357,13 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
                 <div className={styles.summaryRow}>
                   <span className={styles.summaryLabel}>Accounts</span>
                   <span className={styles.summaryValue}>
-                    {connectedAccountNames.length > 0
-                      ? connectedAccountNames.join(', ')
+                    {connections.length > 0
+                      ? connections
+                          .map(
+                            (c) =>
+                              `${c.institutionName ?? c.displayName ?? 'Bank'} (${c.accounts.length})`,
+                          )
+                          .join(', ')
                       : 'None — you can connect later'}
                   </span>
                 </div>

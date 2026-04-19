@@ -22,13 +22,23 @@ export function createDataSourceRoutes(registry: AgentRegistry) {
       );
 
     return c.json(
-      connections.map((conn) => ({
-        id: conn.id,
-        dataSourceTypeId: conn.dataSourceTypeId,
-        displayName: conn.displayName,
-        status: conn.status,
-        lastSyncedAt: conn.lastSyncedAt,
-      })),
+      connections.map((conn) => {
+        const metadata = (conn.metadata ?? {}) as {
+          institutionId?: string;
+          institutionName?: string;
+          accounts?: Array<{ id: string; name: string; mask?: string }>;
+        };
+        return {
+          id: conn.id,
+          dataSourceTypeId: conn.dataSourceTypeId,
+          displayName: conn.displayName,
+          status: conn.status,
+          lastSyncedAt: conn.lastSyncedAt,
+          institutionId: metadata.institutionId ?? null,
+          institutionName: metadata.institutionName ?? null,
+          accounts: metadata.accounts ?? [],
+        };
+      }),
     );
   });
 
@@ -38,6 +48,7 @@ export function createDataSourceRoutes(registry: AgentRegistry) {
     async (c) => {
       const agentInstanceId = c.req.param("agentInstanceId");
       const dataSourceTypeId = c.req.param("dataSourceTypeId");
+      const body = await c.req.json().catch(() => ({}));
 
       // Look up the agent type to find the adapter
       // For now, iterate all agent types to find the matching data source
@@ -52,7 +63,9 @@ export function createDataSourceRoutes(registry: AgentRegistry) {
         return c.json({ error: "Data source type not found" }, 404);
       }
 
-      const config = await adapter.getConnectionConfig(agentInstanceId);
+      const config = await adapter.getConnectionConfig(agentInstanceId, {
+        redirectUri: body.redirectUri,
+      });
       return c.json(config);
     },
   );
