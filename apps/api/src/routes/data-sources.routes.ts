@@ -63,11 +63,29 @@ export function createDataSourceRoutes(registry: AgentRegistry) {
         return c.json({ error: "Data source type not found" }, 404);
       }
 
-      const config = await adapter.getConnectionConfig(agentInstanceId, {
-        redirectUri: body.redirectUri,
-        institutionId: body.institutionId,
-      });
-      return c.json(config);
+      try {
+        const config = await adapter.getConnectionConfig(agentInstanceId, {
+          redirectUri: body.redirectUri,
+          institutionId: body.institutionId,
+        });
+        return c.json(config);
+      } catch (err) {
+        // Surface Plaid's actual error_message / error_code so the frontend
+        // can distinguish cases like INVALID_INSTITUTION and fall back.
+        const plaid = (err as { response?: { data?: {
+          error_message?: string;
+          error_code?: string;
+          error_type?: string;
+        } } }).response?.data;
+        const message =
+          plaid?.error_message ??
+          (err instanceof Error ? err.message : "Plaid error");
+        return c.json({
+          error: message,
+          error_code: plaid?.error_code,
+          error_type: plaid?.error_type,
+        }, 500);
+      }
     },
   );
 

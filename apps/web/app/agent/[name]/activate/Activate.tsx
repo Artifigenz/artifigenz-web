@@ -559,7 +559,10 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
         // institution_id with INVALID_INSTITUTION. Fall back to the default
         // picker so the user isn't stuck — they can search for the bank.
         const msg = (err as { message?: string })?.message ?? '';
-        if (institutionId && /invalid[_ ]institution/i.test(msg)) {
+        const status = (err as { status?: number })?.status;
+        const looksLikeInstitutionReject =
+          /invalid[_ ]institution/i.test(msg) || status === 500;
+        if (institutionId && looksLikeInstitutionReject) {
           res = await tryInit(undefined);
         } else {
           throw err;
