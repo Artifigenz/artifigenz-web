@@ -22,6 +22,7 @@ let _skillQueue: Queue | null = null;
 let _syncQueue: Queue | null = null;
 let _deliveryQueue: Queue | null = null;
 let _parseQueue: Queue | null = null;
+let _briefRefreshQueue: Queue | null = null;
 
 export function getRedisConnection(): ConnectionOptions {
   return getConnection();
@@ -59,6 +60,17 @@ export const fileParseQueue = {
     return _parseQueue;
   },
   add: (...args: Parameters<Queue["add"]>) => fileParseQueue.instance.add(...args),
+};
+
+export const briefRefreshQueue = {
+  get instance() {
+    if (!_briefRefreshQueue)
+      _briefRefreshQueue = new Queue("brief_refresh", { connection: getConnection() });
+    return _briefRefreshQueue;
+  },
+  add: (...args: Parameters<Queue["add"]>) => briefRefreshQueue.instance.add(...args),
+  upsertJobScheduler: (...args: Parameters<Queue["upsertJobScheduler"]>) =>
+    briefRefreshQueue.instance.upsertJobScheduler(...args),
 };
 
 export { getRedisConnection as redisConnection };

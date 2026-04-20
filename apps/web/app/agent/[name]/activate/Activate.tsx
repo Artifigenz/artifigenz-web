@@ -678,12 +678,18 @@ export default function Activate({ params }: { params: Promise<{ name: string }>
     }
     if (step === 1) {
       // Bank connect is the final step for account-based agents:
-      // promote the onboarding instance to active and head to the dashboard.
+      // promote the onboarding instance to active and head to the home screen.
       if (connections.length === 0 || activating) return;
       setActivating(true);
       try {
         await activate(slug, { status: 'active' });
-        router.push(`/agent/${slug}`);
+        // Finance handoff: the Brief is the home screen. Kick off generation on
+        // /finance/loading — it SSE-streams the 4 phases then lands at /finance.
+        if (slug === 'finance') {
+          router.push('/finance/loading');
+        } else {
+          router.push(`/agent/${slug}`);
+        }
       } catch (err) {
         setActivating(false);
         setConnectError(err instanceof Error ? err.message : 'Failed to activate');

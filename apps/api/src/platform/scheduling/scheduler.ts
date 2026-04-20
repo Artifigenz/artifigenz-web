@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db, agentInstances } from "@artifigenz/db";
-import { skillExecutionQueue } from "./queues";
+import { skillExecutionQueue, briefRefreshQueue } from "./queues";
 import { eventBus } from "../events/event-bus";
 import { DATA_SOURCE_SYNCED, INSIGHT_CREATED } from "../events/event-types";
 import { deliveryService } from "../delivery/delivery-service";
@@ -11,8 +11,32 @@ export class Scheduler {
 
   async start(): Promise<void> {
     await this.registerCronJobs();
+    await this.registerBriefCronJobs();
     this.registerEventHandlers();
     console.log("[Scheduler] Started");
+  }
+
+  /**
+   * Brief refresh cadence — spec §4.
+   *  Daily 02:00 UTC — numbers-only refresh
+   *  Weekly Mon 02:00 UTC — full refresh (new LLM call)
+   *
+   * Spec mentions user-local time; for v1 we run in UTC and will add
+   * per-user timezone fan-out later. The worker itself fans out across all
+   * eligible users on each tick.
+   */
+  private async registerBriefCronJobs(): Promise<void> {
+    await briefRefreshQueue.upsertJobScheduler(
+      "brief-refresh-daily",
+      { pattern: "0 2 * * *" }, // 02:00 UTC every day
+      { name: "brief:refresh-daily", data: {} },
+    );
+    await briefRefreshQueue.upsertJobScheduler(
+      "brief-refresh-weekly",
+      { pattern: "0 2 * * 1" }, // 02:00 UTC every Monday
+      { name: "brief:refresh-weekly", data: {} },
+    );
+    console.log("[Scheduler] Brief refresh crons registered (daily + weekly)");
   }
 
   private async registerCronJobs(): Promise<void> {

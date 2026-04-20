@@ -319,6 +319,53 @@ export class ApiClient {
     return data as { metrics: number; insights: number };
   }
 
+  // ─── The Brief ─────────────────────────────────────────────────
+
+  /** Kick off Brief generation. Returns a generation_id to subscribe to. */
+  async generateBrief() {
+    return this.post<{ generation_id: string }>('/api/brief/generate');
+  }
+
+  /**
+   * Open the SSE stream of Brief-generation progress events. Uses fetch()
+   * manually because native EventSource can't send an Authorization header.
+   * Returns the Response — caller reads response.body as a ReadableStream.
+   */
+  async briefEventsResponse(generationId: string): Promise<Response> {
+    const token = await this.getToken();
+    if (!token) {
+      throw { status: 401, message: 'Not authenticated' } satisfies ApiError;
+    }
+    const res = await fetch(
+      `${API_URL}/api/brief/generate/${generationId}/events`,
+      {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' },
+      },
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw {
+        status: res.status,
+        message:
+          (data as { error?: string }).error ??
+          `Brief event stream failed (${res.status})`,
+      } satisfies ApiError;
+    }
+    return res;
+  }
+
+  async getCurrentBrief() {
+    return this.get<{
+      id: string;
+      verdict: string;
+      numbers: Array<{ value: string; phrase: string }>;
+      paragraph: string;
+      data_scope: string;
+      generated_at: string;
+    }>('/api/brief/current');
+  }
+
   async getDeliveryPreferences() {
     return this.get<{
       email: { enabled: boolean; address: string | null };
