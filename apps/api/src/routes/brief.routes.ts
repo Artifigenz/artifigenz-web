@@ -1,0 +1,137 @@
+import { Hono } from "hono";
+import { streamSSE } from "hono/streaming";
+import { and, desc, eq } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+import { db, agentInstances, financeBriefs } from "@artifigenz/db";
+import { clerkAuth } from "../platform/auth/clerk-middleware";
+import {
+  createGeneration,
+  isClosed,
+  subscribe,
+  type BriefEvent,
+} from "../agents/finance/brief/events";
+import { runBriefGeneration } from "../agents/finance/brief/orchestrator";
+
+const app = new Hono();
+app.use("/*", clerkAuth);
+
+/**
+ * POST /api/brief/generate
+ *   body: { }                   — user is from Clerk session
+ *   returns: { generation_id }
+ *
+ * Kicks off the four-phase pipeline asynchronously. The caller subscribes to
+ * /generate/:id/events to receive progress and completion. Spec §3.1.
+ */
+app.post("/generate", async (c) => {
+  const user = c.get("user");
+
+  // Use the user's finance agent instance. If none exists, refuse — onboarding
+  // must have created one.
+  const [instance] = await db
+    .select({ id: agentInstances.id })
+    .from(agentInstances)
+    .where(
+      and(
+        eq(agentInstances.userId, user.id),
+        eq(agentInstances.agentTypeId, "finance"),
+      ),
+    )
+    .limit(1);
+
+  if (!instance) {
+    return c.json(
+      { error: "No finance agent found. Complete onboarding first." },
+      400,
+    );
+  }
+
+  const generationId = randomUUID();
+  createGeneration(generationId);
+
+  // Fire-and-forget. The Promise keeps running after we return the response.
+  runBriefGeneration(user.id, instance.id, generationId).catch((err) => {
+    console.error(`[Brief] Orchestrator crashed for ${generationId}:`, err);
+  });
+
+  return c.json({ generation_id: generationId });
+});
+
+/**
+ * GET /api/brief/generate/:id/events
+ *   Server-sent events. Emits { type, ... } frames matching BriefEvent.
+ *   Closes the stream on complete/error/insufficient_data.
+ *
+ * Auth is via Bearer token on the request. Native EventSource can't send
+ * headers, so the frontend consumes this via fetch() + ReadableStream.
+ */
+app.get("/generate/:id/events", async (c) => {
+  const generationId = c.req.param("id");
+
+  return streamSSE(c, async (stream) => {
+    // If the generation already completed before the subscriber connected,
+    // subscribe() will flush whatever was buffered and we'll see the terminal
+    // event immediately.
+    await new Promise<void>((resolve) => {
+      const unsubscribe = subscribe(generationId, (event: BriefEvent) => {
+        // Write then (if terminal) close.
+        stream
+          .writeSSE({
+            event: event.type,
+            data: JSON.stringify(event),
+          })
+          .then(() => {
+            if (
+              event.type === "complete" ||
+              event.type === "error" ||
+              event.type === "insufficient_data"
+            ) {
+              unsubscribe();
+              resolve();
+            }
+          })
+          .catch((err) => {
+            console.error("[Brief/sse] write failed:", err);
+            unsubscribe();
+            resolve();
+          });
+      });
+
+      // If closed before we attached (e.g. user reconnects after terminal),
+      // subscribe() will have already flushed the buffered terminal event.
+      if (isClosed(generationId)) {
+        unsubscribe();
+        resolve();
+      }
+    });
+  });
+});
+
+/**
+ * GET /api/brief/current
+ *   Returns the latest Brief for the signed-in user, or 404 if none exists.
+ *   Spec §3.8.
+ */
+app.get("/current", async (c) => {
+  const user = c.get("user");
+
+  const [row] = await db
+    .select()
+    .from(financeBriefs)
+    .where(eq(financeBriefs.userId, user.id))
+    .orderBy(desc(financeBriefs.generatedAt))
+    .limit(1);
+
+  if (!row) return c.json({ error: "No brief yet" }, 404);
+
+  return c.json({
+    id: row.id,
+    verdict: row.verdict,
+    numbers: row.numbers,
+    paragraph: row.paragraph,
+    data_scope: row.dataScope,
+    generated_at: row.generatedAt,
+  });
+});
+
+export default app;

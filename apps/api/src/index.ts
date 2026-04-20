@@ -17,6 +17,7 @@ import { Scheduler } from "./platform/scheduling/scheduler";
 import { createSkillWorker } from "./platform/scheduling/workers/skill-worker";
 import { createSyncWorker } from "./platform/scheduling/workers/sync-worker";
 import { createDeliveryWorker } from "./platform/scheduling/workers/delivery-worker";
+import { createBriefRefreshWorker } from "./platform/scheduling/workers/brief-refresh-worker";
 
 // Routes
 import userRoutes from "./routes/user.routes";
@@ -28,6 +29,7 @@ import webhookRoutes from "./routes/webhooks.routes";
 import chatRoutes from "./routes/chat.routes";
 import uploadRoutes from "./routes/upload.routes";
 import { createPlaidRoutes } from "./routes/plaid.routes";
+import briefRoutes from "./routes/brief.routes";
 
 // ─── Bootstrap ──────────────────────────────────────────────────────
 
@@ -86,6 +88,7 @@ app.route("/api/upload", uploadRoutes);
 app.route("/api/me", chatRoutes); // exposes /conversations under /api/me
 app.route("/api/webhooks", webhookRoutes);
 app.route("/api/plaid", createPlaidRoutes());
+app.route("/api/brief", briefRoutes);
 
 // ─── Start ──────────────────────────────────────────────────────────
 
@@ -130,11 +133,12 @@ async function startWorkers() {
   createSkillWorker(registry);
   createSyncWorker(registry);
   createDeliveryWorker();
+  createBriefRefreshWorker();
 
   const scheduler = new Scheduler(registry);
   await scheduler.start();
 
-  console.log("  Workers started (skill, sync, delivery)");
+  console.log("  Workers started (skill, sync, delivery, brief-refresh)");
 }
 
 startWorkers().catch((err) => {

@@ -11,7 +11,7 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { agentInstances, dataSourceConnections } from "./platform";
+import { agentInstances, dataSourceConnections, users } from "./platform";
 
 // ─── Normalized Transactions ───────────────────────────────────────
 
@@ -33,6 +33,12 @@ export const financeTransactions = pgTable(
     accountName: varchar("account_name", { length: 100 }),
     source: varchar("source", { length: 20 }).notNull(),
     plaidTransactionId: varchar("plaid_transaction_id", { length: 255 }).unique(),
+    // Plaid account_id — lets the Brief algorithm join a transaction to its account
+    // type (depository vs credit) without parsing rawData.
+    plaidAccountId: varchar("plaid_account_id", { length: 255 }),
+    pending: integer("pending").default(0),
+    personalFinanceCategoryPrimary: varchar("pfc_primary", { length: 100 }),
+    personalFinanceCategoryDetailed: varchar("pfc_detailed", { length: 100 }),
     rawData: jsonb("raw_data"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
@@ -45,6 +51,7 @@ export const financeTransactions = pgTable(
       table.agentInstanceId,
       table.merchantName,
     ),
+    index("idx_finance_tx_account").on(table.plaidAccountId),
   ],
 );
 
@@ -70,6 +77,92 @@ export const financeSubscriptions = pgTable(
   },
   (table) => [
     index("idx_finance_subs_next").on(table.nextChargeDate),
+  ],
+);
+
+// ─── Accounts (Plaid account snapshot — balances live here) ────────
+
+export const financeAccounts = pgTable(
+  "finance_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    agentInstanceId: uuid("agent_instance_id")
+      .notNull()
+      .references(() => agentInstances.id, { onDelete: "cascade" }),
+    dataSourceConnectionId: uuid("data_source_connection_id")
+      .notNull()
+      .references(() => dataSourceConnections.id, { onDelete: "cascade" }),
+    plaidAccountId: varchar("plaid_account_id", { length: 255 }).notNull().unique(),
+    name: varchar("name", { length: 255 }),
+    mask: varchar("mask", { length: 10 }),
+    type: varchar("type", { length: 20 }),
+    subtype: varchar("subtype", { length: 30 }),
+    currentBalance: decimal("current_balance", { precision: 14, scale: 2 }),
+    availableBalance: decimal("available_balance", { precision: 14, scale: 2 }),
+    isoCurrencyCode: varchar("iso_currency_code", { length: 3 }),
+    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("idx_finance_accounts_instance").on(table.agentInstanceId),
+  ],
+);
+
+// ─── Recurring Streams (Plaid /transactions/recurring/get cache) ───
+
+export const financeRecurringStreams = pgTable(
+  "finance_recurring_streams",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    agentInstanceId: uuid("agent_instance_id")
+      .notNull()
+      .references(() => agentInstances.id, { onDelete: "cascade" }),
+    plaidStreamId: varchar("plaid_stream_id", { length: 255 }).notNull(),
+    direction: varchar("direction", { length: 10 }).notNull(), // inflow | outflow
+    plaidAccountId: varchar("plaid_account_id", { length: 255 }),
+    merchantName: varchar("merchant_name", { length: 255 }),
+    description: text("description"),
+    averageAmount: decimal("average_amount", { precision: 14, scale: 2 }).notNull(),
+    frequency: varchar("frequency", { length: 30 }).notNull(),
+    lastDate: date("last_date"),
+    predictedNextDate: date("predicted_next_date"),
+    firstDate: date("first_date"),
+    status: varchar("status", { length: 30 }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_recurring_streams_instance_stream").on(
+      table.agentInstanceId,
+      table.plaidStreamId,
+    ),
+    index("idx_recurring_streams_dir").on(table.agentInstanceId, table.direction),
+  ],
+);
+
+// ─── Briefs (The Finance agent's home screen output) ───────────────
+
+export const financeBriefs = pgTable(
+  "finance_briefs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    agentInstanceId: uuid("agent_instance_id")
+      .notNull()
+      .references(() => agentInstances.id, { onDelete: "cascade" }),
+    verdict: text("verdict").notNull(),
+    numbers: jsonb("numbers").notNull(),          // [{ value, phrase }, ...]
+    paragraph: text("paragraph").notNull(),
+    dataScope: text("data_scope").notNull(),
+    digestSnapshot: jsonb("digest_snapshot").notNull(),
+    generatedAt: timestamp("generated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_finance_briefs_user_latest").on(table.userId, table.generatedAt),
+    index("idx_finance_briefs_instance_latest").on(
+      table.agentInstanceId,
+      table.generatedAt,
+    ),
   ],
 );
 

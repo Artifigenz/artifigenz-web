@@ -1,0 +1,107 @@
+.page {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+.container {
+  max-width: 720px;
+  margin: 48px auto 0;
+  padding: 0 16px;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-muted, #737373);
+  margin-bottom: 28px;
+}
+
+.verdict {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 500;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  color: var(--fg, #0a0a0a);
+  max-width: 640px;
+  margin: 0 0 40px;
+}
+
+.numbers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 32px 0 40px;
+}
+
+.numberRow {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.numberValue {
+  font-weight: 500;
+  font-size: 17px;
+  min-width: 220px;
+  color: var(--fg, #0a0a0a);
+}
+
+.numberPhrase {
+  color: var(--fg-muted, #737373);
+  font-size: 14px;
+}
+
+.numberPhrase::before {
+  content: '· ';
+}
+
+.paragraph {
+  font-size: 16.5px;
+  line-height: 1.6;
+  color: var(--fg, #0a0a0a);
+  max-width: 640px;
+  margin: 0 0 36px;
+}
+
+.dataScope {
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--fg-muted, #737373);
+  margin: 0 0 28px;
+}
+
+.closeLine {
+  border-top: 1px solid var(--border, #e5e5e5);
+  padding-top: 20px;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--fg-muted, #737373);
+  line-height: 1.6;
+}
+
+.fadeIn {
+  animation: fadeIn 600ms ease-out backwards;
+}
+
+.fadeIn:nth-child(1) { animation-delay: 0ms; }
+.fadeIn:nth-child(2) { animation-delay: 160ms; }
+.fadeIn:nth-child(3) { animation-delay: 360ms; }
+.fadeIn:nth-child(4) { animation-delay: 540ms; }
+.fadeIn:nth-child(5) { animation-delay: 720ms; }
+.fadeIn:nth-child(6) { animation-delay: 900ms; }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
