@@ -29,7 +29,10 @@ export interface DataSourceTypeDefinition {
   syncMechanism: "webhook" | "polling" | "manual";
   pollingInterval?: string;
 
-  getConnectionConfig(agentInstanceId: string): Promise<ConnectionConfig>;
+  getConnectionConfig(
+    agentInstanceId: string,
+    options?: { redirectUri?: string },
+  ): Promise<ConnectionConfig>;
   finalizeConnection(params: FinalizeParams): Promise<DataSourceConnectionResult>;
   testConnection(connection: DataSourceConnectionResult): Promise<boolean>;
   disconnect(connection: DataSourceConnectionResult): Promise<void>;

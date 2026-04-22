@@ -40,8 +40,13 @@ export const plaidAdapter: DataSourceTypeDefinition = {
   /**
    * Step 1 of the connection flow.
    * Creates a Plaid Link token that the client uses to launch the bank picker UI.
+   * `redirectUri` enables OAuth banks (Chase, Capital One, BoA, Wells Fargo, Citi)
+   * and must match a URL registered in the Plaid dashboard.
    */
-  async getConnectionConfig(agentInstanceId: string) {
+  async getConnectionConfig(
+    agentInstanceId: string,
+    options?: { redirectUri?: string },
+  ) {
     // Look up user from agent instance
     const [instance] = await db
       .select({ userId: agentInstances.userId })
@@ -66,6 +71,7 @@ export const plaidAdapter: DataSourceTypeDefinition = {
       products: [Products.Transactions],
       country_codes: [CountryCode.Us, CountryCode.Ca],
       language: "en",
+      ...(options?.redirectUri ? { redirect_uri: options.redirectUri } : {}),
     });
 
     return {
